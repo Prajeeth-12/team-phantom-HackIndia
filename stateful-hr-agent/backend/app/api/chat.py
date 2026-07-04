@@ -1,4 +1,4 @@
-﻿import traceback
+import traceback
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage
@@ -30,6 +30,13 @@ async def _build_candidates_table_ui():
             "role": c.role,
             "experience": c.experience,
             "status": c.status,
+            "actions": [
+                {"label": "View Profile", "event": "view_candidate", "type": "primary"},
+                {"label": "Schedule Interview", "event": "schedule_interview", "type": "default"},
+                {"label": "Generate Offer", "event": "generate_offer", "type": "default"},
+                {"label": "Convert Employee", "event": "convert_employee", "type": "default"},
+                {"label": "Delete", "event": "delete_candidate", "type": "danger"}
+            ]
         }
         for c in candidates
     ]
@@ -45,9 +52,14 @@ async def _build_candidates_table_ui():
             {"key": "role", "label": "Role"},
             {"key": "experience", "label": "Experience"},
             {"key": "status", "label": "Status"},
+            {"key": "actions", "label": "Actions"},
         ],
         "rows": rows,
-        "actions": ["Read", "Create", "Update", "Delete"],
+        "actions": [
+            {"label": "+ Add Candidate", "event": "show_create_form"},
+            {"label": "Generate Report", "event": "generate_report"},
+            {"label": "Refresh", "event": "read_candidates"}
+        ],
         "create_form": {
             "title": "Create Candidate",
             "submit_action": "create_candidate",
@@ -89,6 +101,11 @@ async def _build_employees_table_ui():
             "email": e.email,
             "department": e.department,
             "position": e.position,
+            "actions": [
+                {"label": "View Profile", "event": "view_employee", "type": "primary"},
+                {"label": "Update Details", "event": "edit_employee", "type": "default"},
+                {"label": "Documents", "event": "employee_documents", "type": "default"}
+            ]
         }
         for e in employees
     ]
@@ -102,9 +119,12 @@ async def _build_employees_table_ui():
             {"key": "email", "label": "Email"},
             {"key": "department", "label": "Department"},
             {"key": "position", "label": "Position"},
+            {"key": "actions", "label": "Actions"},
         ],
         "rows": rows,
-        "actions": ["Read"],
+        "actions": [
+            {"label": "Refresh", "event": "read_employees"}
+        ],
     }
 
 
@@ -189,7 +209,7 @@ async def _fallback_chat(message: str):
             "ui": _data_explorer_ui(),
         }
 
-    if "employee" in text and ("show" in text or "list" in text or "records" in text):
+    if "employee" in text and ("show" in text or "list" in text or "records" in text or "read" in text):
         return {
             "response": "Showing employee records.",
             "ui": await _build_employees_table_ui(),
@@ -230,18 +250,34 @@ async def chat_endpoint(request: ChatRequest):
         last_ui = result.get("last_ui", None)
 
         response_text = "I'm sorry, I couldn't process that request."
-        if messages and len(messages) > 1:
+        if messages and len(messages) > 0:
             response_text = messages[-1].content
+
+        trace_data = {
+            "intent": result.get("intent", ""),
+            "plan": result.get("plan", []),
+            "mcp_results": result.get("mcp_results", []),
+            "agent_trace_log": result.get("agent_trace_log", "")
+        }
 
         return {
             "response": response_text,
             "ui": last_ui,
+            "trace": trace_data
         }
     except Exception as e:
         detail = f"{type(e).__name__}: {str(e)}\n{traceback.format_exc()}"
         low = detail.lower()
 
         if "apiconnectionerror" in low or "connecterror" in low or "connection error" in low:
-            return await _fallback_chat(request.message)
+            fallback_res = await _fallback_chat(request.message)
+            if "trace" not in fallback_res:
+                fallback_res["trace"] = {
+                    "intent": "fallback_route",
+                    "plan": [],
+                    "mcp_results": [],
+                    "agent_trace_log": "Connection error/Timeout occurred. Local fallback executed."
+                }
+            return fallback_res
 
         raise HTTPException(status_code=500, detail=detail)

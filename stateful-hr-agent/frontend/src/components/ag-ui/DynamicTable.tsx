@@ -10,7 +10,7 @@ interface DynamicTableProps {
   data?: any[];
   rows?: any[];
   columns?: { key: string; label: string }[];
-  actions?: string[];
+  actions?: (string | { label: string; event: string })[];
   create_form?: FormConfig;
   update_form?: FormConfig;
   delete_action?: string;
@@ -47,20 +47,22 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
     return Object.keys(rowData[0]).map((key) => ({ key, label: key }));
   }, [columns, rowData]);
 
-  const availableTabs: CrudTab[] = useMemo(() => {
-    const n = new Set((actions || []).map((a) => {
-      const s = typeof a === 'object' && a !== null ? (a as any).label || (a as any).event || '' : String(a);
-      return s.trim().toLowerCase();
-    }));
-    const t: CrudTab[] = [];
-    if (n.size === 0 || n.has('read')) t.push('Read');
-    if (n.size === 0 || n.has('create')) t.push('Create');
-    if (n.size === 0 || n.has('update')) t.push('Update');
-    if (n.size === 0 || n.has('delete')) t.push('Delete');
-    return t;
+  const topActions = useMemo(() => {
+    const rawActions = actions || [];
+    return rawActions
+      .map((a) => {
+        if (typeof a === 'object' && a !== null) {
+          return { label: a.label || '', event: a.event || '' };
+        }
+        return { label: String(a), event: String(a) };
+      })
+      .filter((a) => {
+        const val = a.event.trim().toLowerCase();
+        return val !== 'read' && val !== 'create' && val !== 'update' && val !== 'delete';
+      });
   }, [actions]);
 
-  const [activeTab, setActiveTab] = useState<CrudTab>(availableTabs[0] || 'Read');
+  const [activeTab, setActiveTab] = useState<CrudTab>('Read');
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -88,7 +90,6 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
     });
   }, [rowData, searchTerm, roleFilter, statusFilter]);
 
-  useEffect(() => { if (!availableTabs.includes(activeTab)) setActiveTab(availableTabs[0] || 'Read'); }, [availableTabs, activeTab]);
   useEffect(() => { if (selectedIndex !== null && selectedIndex >= rowData.length) { setSelectedIndex(null); setInlineEditActive(false); setInlineEditData({}); setInlineErrors({}); } }, [rowData, selectedIndex]);
 
   const resolvedCreateForm: FormConfig = useMemo(() => create_form?.fields?.length ? create_form : { title: 'Create Candidate', fields: DEFAULT_CREATE_FIELDS, submit_action: 'create_candidate' }, [create_form]);
@@ -118,7 +119,7 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
     setFormErrors((p) => ({ ...p, [name]: validateField(name, value, required) }));
   };
 
-  const editableKeys = useMemo(() => headers.map((h) => h.key).filter((k) => k !== 'id' && k !== 'created_at'), [headers]);
+  const editableKeys = useMemo(() => headers.map((h) => h.key).filter((k) => k !== 'id' && k !== 'created_at' && k !== 'actions'), [headers]);
 
   const startInlineEdit = () => { if (!selectedRow) return; const n: Record<string, any> = {}; editableKeys.forEach((k) => { n[k] = selectedRow[k] ?? ''; }); setInlineEditData(n); setInlineErrors({}); setInlineEditActive(true); };
   const cancelInlineEdit = () => { setInlineEditActive(false); setInlineEditData({}); setInlineErrors({}); };
@@ -135,6 +136,18 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
     fc.fields.forEach((f) => { if (f.type === 'hidden') return; const e = validateField(f.name, formData[f.name], f.required !== false); if (e) ne[f.name] = e; });
     setFormErrors(ne); if (Object.keys(ne).length > 0) return;
     onAction(fc.submit_action, formData);
+    setActiveTab('Read');
+  };
+
+  const handleTopActionClick = (act: { label: string; event: string }) => {
+    const ev = act.event.toLowerCase();
+    const lbl = act.label.toLowerCase();
+    
+    if (ev === 'create_candidate_form' || ev === 'show_create_form' || lbl.includes('add') || lbl.includes('create')) {
+      setActiveTab('Create');
+    } else {
+      onAction(act.event, {});
+    }
   };
 
   // ── Btn helper ──
@@ -158,7 +171,8 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
             </label>
           );
         })}
-        <div className="md:col-span-2 flex justify-end pt-1">
+        <div className="md:col-span-2 flex justify-end pt-1 gap-2">
+          <button type="button" onClick={() => setActiveTab('Read')} className={btn()}>Cancel</button>
           <button type="submit" disabled={busy} className={`${btnPrimary} disabled:opacity-40`}>{busy ? 'Saving...' : 'Submit'}</button>
         </div>
       </form>
@@ -168,7 +182,108 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
   const renderRowCell = (row: any, rowIndex: number, hk: string) => {
     const sel = selectedIndex === rowIndex;
     const edit = activeTab === 'Read' && inlineEditActive && sel && editableKeys.includes(hk);
-    if (!edit) return <span className={`text-[12px] ${sel ? 'text-black' : 'text-[#404040]'}`}>{String(row[hk] ?? '—')}</span>;
+    if (!edit) {
+      const val = row[hk];
+      
+      // Check if value is array of action objects
+      if (Array.isArray(val)) {
+        if (val.length > 0 && typeof val[0] === 'object' && val[0] !== null && ('event' in val[0] || 'action' in val[0])) {
+          return (
+            <div className="flex flex-wrap gap-1.5" onClick={(e) => e.stopPropagation()}>
+              {val.map((act: any, idx: number) => {
+                const eventName = act.event || act.action || act.submit_action || '';
+                let btnClass = "";
+                if (sel) {
+                  btnClass = "px-2.5 py-1 rounded bg-[#ffffff] hover:bg-[#eaeaea] border border-[#ffffff] text-[11px] font-semibold text-black transition-colors";
+                } else {
+                  if (act.type === 'primary') {
+                    btnClass = "px-2.5 py-1 rounded bg-black border border-black hover:bg-[#333333] hover:border-[#333333] text-[11px] font-medium text-white transition-colors shadow-sm";
+                  } else if (act.type === 'danger') {
+                    btnClass = "px-2.5 py-1 rounded bg-[#fef2f2] border border-[#fca5a5] hover:bg-[#fee2e2] text-[11px] font-medium text-[#991b1b] transition-colors shadow-sm";
+                  } else {
+                    btnClass = "px-2.5 py-1 rounded bg-white border border-[#e5e5e5] hover:bg-[#f5f5f5] text-[11px] font-medium text-[#404040] hover:text-black transition-colors shadow-sm";
+                  }
+                }
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => onAction(eventName, row)}
+                    className={btnClass}
+                  >
+                    {act.label || eventName}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        }
+        
+        // If it's a regular array, render as comma-separated or badges
+        return (
+          <div className="flex flex-wrap gap-1">
+            {val.map((item: any, idx: number) => (
+              <span
+                key={idx}
+                className={`text-[10px] px-1.5 py-0.5 rounded border ${
+                  sel ? 'bg-[#333333] border-[#555555] text-white' : 'bg-[#f5f5f5] border-[#e5e5e5] text-[#404040]'
+                }`}
+              >
+                {typeof item === 'object' && item !== null ? JSON.stringify(item) : String(item)}
+              </span>
+            ))}
+          </div>
+        );
+      }
+
+      // Check if value is a single action/object
+      if (val && typeof val === 'object') {
+        if ('event' in val || 'action' in val) {
+          const eventName = (val as any).event || (val as any).action || (val as any).submit_action || '';
+          let btnClass = "";
+          if (sel) {
+            btnClass = "px-2.5 py-1 rounded bg-[#ffffff] hover:bg-[#eaeaea] border border-[#ffffff] text-[11px] font-semibold text-black transition-colors";
+          } else {
+            if ((val as any).type === 'primary') {
+              btnClass = "px-2.5 py-1 rounded bg-black border border-black hover:bg-[#333333] hover:border-[#333333] text-[11px] font-medium text-white transition-colors shadow-sm";
+            } else if ((val as any).type === 'danger') {
+              btnClass = "px-2.5 py-1 rounded bg-[#fef2f2] border border-[#fca5a5] hover:bg-[#fee2e2] text-[11px] font-medium text-[#991b1b] transition-colors shadow-sm";
+            } else {
+              btnClass = "px-2.5 py-1 rounded bg-white border border-[#e5e5e5] hover:bg-[#f5f5f5] text-[11px] font-medium text-[#404040] hover:text-black transition-colors shadow-sm";
+            }
+          }
+          return (
+            <div onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                onClick={() => onAction(eventName, row)}
+                className={btnClass}
+              >
+                {(val as any).label || eventName}
+              </button>
+            </div>
+          );
+        }
+        
+        // Clean display of non-action object properties instead of raw JSON
+        const keys = Object.keys(val).filter(k => typeof val[k] !== 'object' && typeof val[k] !== 'function');
+        if (keys.length > 0) {
+          return (
+            <div className="text-[11px] space-y-0.5">
+              {keys.map((k) => (
+                <div key={k} className="flex gap-1">
+                  <span className="font-medium text-[#737373]">{k}:</span>
+                  <span className={sel ? 'text-white' : 'text-[#404040]'}>{String(val[k])}</span>
+                </div>
+              ))}
+            </div>
+          );
+        }
+        return <span className={`text-[12px] ${sel ? 'text-white' : 'text-[#404040]'}`}>{JSON.stringify(val)}</span>;
+      }
+      
+      return <span className={`text-[12px] ${sel ? 'text-white' : 'text-[#404040]'}`}>{String(val ?? '—')}</span>;
+    }
     return (
       <div className="space-y-0.5">
         <input type={hk === 'experience' ? 'number' : 'text'} value={inlineEditData[hk] ?? ''} onClick={(e) => e.stopPropagation()}
@@ -184,19 +299,29 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
     <div className="w-full">
       {title && <h2 className="text-[15px] font-semibold text-black mb-4">{title}</h2>}
 
-      {/* Tabs + Actions */}
-      <div className="flex flex-wrap items-center gap-1.5 mb-4">
-        {availableTabs.map((tab) => (
-          <button key={tab} type="button" onClick={() => setActiveTab(tab)} className={btn(activeTab === tab)}>
-            {tab === 'Create' && <Plus className="w-3 h-3 inline mr-1" />}
-            {tab === 'Delete' && <Trash2 className="w-3 h-3 inline mr-1" />}
-            {tab}
-          </button>
-        ))}
-        <div className="flex gap-1.5 ml-auto">
+      {/* Table Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4 bg-white p-3 rounded-lg border border-[#e5e5e5] shadow-sm">
+        <div className="flex flex-wrap items-center gap-2">
+          {topActions.map((act, idx) => {
+            const isAdd = act.label.toLowerCase().includes('add') || act.label.toLowerCase().includes('create');
+            return (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => handleTopActionClick(act)}
+                className={isAdd ? btnPrimary : btn()}
+              >
+                {isAdd && <Plus className="w-3 h-3 inline mr-1" />}
+                {act.label}
+              </button>
+            );
+          })}
+        </div>
+        
+        <div className="flex items-center gap-2 ml-auto">
           {activeTab === 'Read' && !inlineEditActive && (
             <button type="button" onClick={startInlineEdit} disabled={!selectedRow || isBusy} className={`${btn()} disabled:opacity-30`}>
-              <Pencil className="w-3 h-3 inline mr-1" />Edit
+              <Pencil className="w-3.5 h-3.5 inline mr-1" />Inline Edit
             </button>
           )}
           {activeTab === 'Read' && inlineEditActive && (
@@ -207,9 +332,6 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
               <button type="button" onClick={cancelInlineEdit} className={btn()}><X className="w-3 h-3 inline mr-1" />Cancel</button>
             </>
           )}
-          <button type="button" onClick={() => onAction('read_candidates', {})} disabled={isBusy && busyEvent === 'read_candidates'} className={`${btn()} disabled:opacity-40`}>
-            <RotateCw className={`w-3 h-3 inline mr-1 ${isBusy && busyEvent === 'read_candidates' ? 'animate-spin' : ''}`} />Refresh
-          </button>
         </div>
       </div>
 
@@ -249,7 +371,7 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
               </thead>
               <tbody>
                 {filteredRows.length === 0 && (
-                  <tr><td className="px-4 py-6 text-center text-[12px] text-[#737373]" colSpan={Math.max(headers.length, 1)}>No candidates found</td></tr>
+                  <tr><td className="px-4 py-6 text-center text-[12px] text-[#737373]" colSpan={Math.max(headers.length, 1)}>No data found</td></tr>
                 )}
                 {filteredRows.map((row) => {
                   const ri = rowData.findIndex((r) => r.id === row.id);
@@ -268,20 +390,56 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
           </div>
 
           <div className="md:hidden space-y-2 mb-4">
-            {filteredRows.length === 0 && <p className="text-[12px] text-[#737373] text-center py-4">No candidates found</p>}
+            {filteredRows.length === 0 && <p className="text-[12px] text-[#737373] text-center py-4">No data found</p>}
             {filteredRows.map((row) => {
               const ri = rowData.findIndex((r) => r.id === row.id);
               const sel = selectedIndex === ri;
               return (
-                <button key={row.id ?? ri} type="button" onClick={() => setSelectedIndex(ri)}
-                  className={`w-full text-left rounded-lg border p-3 transition-colors ${sel ? 'border-black bg-black' : 'border-[#e5e5e5] bg-white hover:bg-[#fafafa] shadow-sm'}`}>
-                  <p className={`text-[13px] font-medium ${sel ? 'text-black' : 'text-black'}`}>{row.name || `Candidate ${row.id}`}</p>
-                  <p className={`text-[11px] mt-0.5 ${sel ? 'text-[#404040]' : 'text-[#737373]'}`}>{row.email || 'No email'}</p>
-                  <div className="mt-2 flex gap-2">
-                    <span className={`text-[10px] border rounded px-1.5 py-0.5 ${sel ? 'text-black border-[#d4d4d4] bg-[#fafafa]' : 'text-[#404040] border-[#e5e5e5] bg-[#fafafa]'}`}>{row.role || '—'}</span>
-                    <span className={`text-[10px] border rounded px-1.5 py-0.5 ${sel ? 'text-black border-[#d4d4d4] bg-[#fafafa]' : 'text-[#404040] border-[#e5e5e5] bg-[#fafafa]'}`}>{row.status || '—'}</span>
+                <div key={row.id ?? ri} onClick={() => setSelectedIndex(ri)}
+                  className={`w-full text-left rounded-lg border p-3 transition-colors ${sel ? 'border-black bg-black text-white' : 'border-[#e5e5e5] bg-white hover:bg-[#fafafa] shadow-sm'} cursor-pointer`}>
+                  <p className={`text-[13px] font-medium ${sel ? 'text-white' : 'text-black'}`}>{row.name || `Record ${row.id}`}</p>
+                  <p className={`text-[11px] mt-0.5 ${sel ? 'text-[#e5e5e5]' : 'text-[#737373]'}`}>{row.email || 'No email'}</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {row.role && <span className={`text-[10px] border rounded px-1.5 py-0.5 ${sel ? 'text-white border-[#555555] bg-[#333333]' : 'text-[#404040] border-[#e5e5e5] bg-[#fafafa]'}`}>{row.role}</span>}
+                    {row.status && <span className={`text-[10px] border rounded px-1.5 py-0.5 ${sel ? 'text-white border-[#555555] bg-[#333333]' : 'text-[#404040] border-[#e5e5e5] bg-[#fafafa]'}`}>{row.status}</span>}
                   </div>
-                </button>
+                  {/* Actions inside Mobile Card */}
+                  {Object.keys(row).map((key) => {
+                    const val = row[key];
+                    if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'object' && val[0] !== null && ('event' in val[0] || 'action' in val[0])) {
+                      return (
+                        <div key={key} className={`mt-3 flex flex-wrap gap-1.5 border-t pt-2 ${sel ? 'border-[#333333]' : 'border-[#f0f0f0]'}`} onClick={(e) => e.stopPropagation()}>
+                          {val.map((act: any, idx: number) => {
+                            const eventName = act.event || act.action || act.submit_action || '';
+                            let btnClass = "";
+                            if (sel) {
+                              btnClass = "px-2 py-1 rounded bg-[#ffffff] hover:bg-[#eaeaea] border border-[#ffffff] text-[10px] font-semibold text-black transition-colors";
+                            } else {
+                              if (act.type === 'primary') {
+                                btnClass = "px-2 py-1 rounded bg-black border border-black hover:bg-[#333333] hover:border-[#333333] text-[10px] font-medium text-white transition-colors shadow-sm";
+                              } else if (act.type === 'danger') {
+                                btnClass = "px-2 py-1 rounded bg-[#fef2f2] border border-[#fca5a5] hover:bg-[#fee2e2] text-[10px] font-medium text-[#991b1b] transition-colors shadow-sm";
+                              } else {
+                                btnClass = "px-2 py-1 rounded bg-white border border-[#e5e5e5] hover:bg-[#f5f5f5] text-[10px] font-medium text-[#404040] hover:text-black transition-colors shadow-sm";
+                              }
+                            }
+                            return (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={() => onAction(eventName, row)}
+                                className={btnClass}
+                              >
+                                {act.label || eventName}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      );
+                    }
+                    return null;
+                  })}
+                </div>
               );
             })}
           </div>
@@ -291,7 +449,10 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
       {/* Create */}
       {activeTab === 'Create' && (
         <div className="rounded-lg border border-[#e5e5e5] bg-white p-5 shadow-sm">
-          <p className="text-[12px] font-medium text-[#737373] uppercase tracking-wider mb-4">{resolvedCreateForm.title || 'Create'}</p>
+          <div className="flex items-center justify-between mb-4 border-b border-[#f0f0f0] pb-3">
+            <h3 className="text-[13px] font-semibold text-black uppercase tracking-wider">{resolvedCreateForm.title || 'Create'}</h3>
+            <button type="button" onClick={() => setActiveTab('Read')} className={btn()}>Back to List</button>
+          </div>
           {renderForm(resolvedCreateForm)}
         </div>
       )}
@@ -299,7 +460,10 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
       {/* Update */}
       {activeTab === 'Update' && (
         <div className="rounded-lg border border-[#e5e5e5] bg-white p-5 shadow-sm">
-          <p className="text-[12px] font-medium text-[#737373] uppercase tracking-wider mb-4">{resolvedUpdateForm.title || 'Update'}</p>
+          <div className="flex items-center justify-between mb-4 border-b border-[#f0f0f0] pb-3">
+            <h3 className="text-[13px] font-semibold text-black uppercase tracking-wider">{resolvedUpdateForm.title || 'Update'}</h3>
+            <button type="button" onClick={() => setActiveTab('Read')} className={btn()}>Back to List</button>
+          </div>
           {!selectedRow ? <p className="text-[12px] text-[#737373]">Select a row, then edit fields below.</p> : renderForm(resolvedUpdateForm)}
         </div>
       )}
@@ -307,11 +471,18 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
       {/* Delete */}
       {activeTab === 'Delete' && (
         <div className="rounded-lg border border-[#fca5a5] bg-[#fef2f2] p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4 border-b border-[#fca5a5]/30 pb-3">
+            <h3 className="text-[13px] font-semibold text-[#991b1b] uppercase tracking-wider">Confirm Delete</h3>
+            <button type="button" onClick={() => setActiveTab('Read')} className={btn()}>Cancel</button>
+          </div>
           {!selectedRow ? <p className="text-[12px] text-[#737373]">Select a row to delete.</p> : (
             <div className="flex flex-col md:flex-row items-center justify-between gap-3">
               <p className="text-[13px] text-[#991b1b]">Delete <span className="font-semibold text-black">{selectedRow.name}</span> (ID: {selectedRow.id})?</p>
               <button type="button" disabled={isBusy && busyEvent === (delete_action || 'delete_candidate')}
-                onClick={() => onAction(delete_action || 'delete_candidate', { id: selectedRow.id })}
+                onClick={() => {
+                  onAction(delete_action || 'delete_candidate', { id: selectedRow.id });
+                  setActiveTab('Read');
+                }}
                 className={`${btnDanger} disabled:opacity-40 whitespace-nowrap`}>
                 <Trash2 className="w-3.5 h-3.5 inline mr-1" />{isBusy && busyEvent === (delete_action || 'delete_candidate') ? 'Deleting...' : 'Confirm Delete'}
               </button>

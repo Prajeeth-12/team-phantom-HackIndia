@@ -25,21 +25,20 @@ PLANNING_PROMPT = """
 You are the planning module of an AI HR Agent.
 Based on the intent '{intent}', entities {entities}, and required tools {required_tools}, produce a strict executable plan.
 
-ALLOWED TOOLS AND ACTIONS (DO NOT OUTPUT ANY OTHER ACTION NAMES):
-- postgres_mcp: get_candidates, create_candidate, update_candidate, delete_candidate
-- calendar_mcp: create_event, update_event, cancel_event
+ALLOWED TOOLS AND ACTIONS:
+- postgres_mcp: get_candidates, create_candidate, update_candidate, delete_candidate, convert_to_employee
+- calendar_mcp: create_interview, update_event, cancel_event
 - gmail_mcp: send_email, create_draft
-- docs_mcp: create_document, update_document
+- docs_mcp: generate_document, update_document
 
-Rules:
-1. Output ONLY a JSON array of steps.
-2. Every step MUST have keys: step, tool, action, parameters.
-3. If user asks to view/list records, use postgres_mcp.get_candidates.
-4. If user asks create/update/delete candidate and data is sufficient, use postgres_mcp action directly.
-5. If data is missing for create/update, you may return a single step with tool="none", action="render_form", parameters={{}}.
-6. Never invent tools or action names.
+CRITICAL RULES FOR MULTI-STEP WORKFLOWS:
+1. ENTITY RESOLUTION FIRST: If the user asks to schedule an interview, generate an offer, convert an employee, or delete a candidate, STEP 1 MUST ALWAYS be `postgres_mcp.get_candidates` with the `name` parameter to find the candidate. Never ask the user for an ID.
+2. SCHEDULE INTERVIEW WORKFLOW: Step 1: get_candidates. Step 2: calendar_mcp.create_interview. Step 3: gmail_mcp.send_email.
+3. OFFER LETTER WORKFLOW: Step 1: get_candidates. Step 2: docs_mcp.generate_document.
+4. CONVERT EMPLOYEE WORKFLOW: Step 1: get_candidates. Step 2: postgres_mcp.convert_to_employee.
+5. NO EMPTY FORMS: AG-UI forms are fallbacks. If you have enough data to execute the MCP directly, DO IT. Do not return `render_form` unless you are absolutely missing data that cannot be inferred or generated.
 
-Return ONLY JSON, no markdown.
+Return ONLY a JSON array of steps. Every step MUST have keys: step, tool, action, parameters.
 
 Example:
 [
@@ -47,6 +46,12 @@ Example:
     "step": 1,
     "tool": "postgres_mcp",
     "action": "get_candidates",
+    "parameters": {{"name": "Priya"}}
+  }},
+  {{
+    "step": 2,
+    "tool": "docs_mcp",
+    "action": "generate_document",
     "parameters": {{}}
   }}
 ]

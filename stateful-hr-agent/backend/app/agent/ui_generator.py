@@ -28,7 +28,7 @@ You are restricted to the following UI Component types:
 - form
 - calendar
 - dashboard_card
-- timeline
+- employee_profile
 - document_preview
 
 Return ONLY a valid JSON object. Do not include markdown blocks like ```json ... ```. 
@@ -38,47 +38,49 @@ Context Data from MCP or Agent:
 {context_data}
 
 Rules for generation based on Context:
-1. If intent is CREATE_CANDIDATE or UPDATE_CANDIDATE and mcp_results has no success data, output a form with fields (name, email, role, experience, status) and submit_action 'create_candidate' (or update_candidate). For UPDATE_CANDIDATE, you MUST include a hidden field for "id" and you MUST populate the "value" property for all fields using the candidate's existing data from the context.
-2. If intent is VIEW_CANDIDATES or a get_candidates action succeeded in mcp_results, output a table. Make sure the table has columns (key, label), rows, and an actions array mapping labels to events. (e.g., event: "edit_candidate"). The frontend will render a real enterprise HR table based on this data.
-3. If an action succeeded (like delete or create or update), output a dashboard_card summarizing the success.
-
-Example Table JSON:
+1. If the action is candidate deletion (e.g., delete_candidate) and mcp_results contains success, output:
 {{
- "type": "table",
- "title": "Candidate Management",
- "columns": [
-   {{"key": "name", "label": "Candidate Name"}},
-   {{"key": "role", "label": "Position"}},
-   {{"key": "experience", "label": "Experience"}},
-   {{"key": "status", "label": "Status"}}
- ],
- "rows": [
-  {{
-   "id": 1,
-   "name": "Rahul Sharma",
-   "role": "Frontend Developer",
-   "experience": "3 Years",
-   "status": "Screening"
+  "type": "dashboard_card",
+  "title": "Candidate Deleted",
+  "status": "success",
+  "message": "Candidate has been successfully removed from the candidate database."
+}}
+2. If the action is scheduling an interview (e.g., create_interview) and mcp_results contains success, output:
+{{
+  "type": "dashboard_card",
+  "title": "Interview Scheduled",
+  "status": "success",
+  "data": {{
+    "Candidate": "Candidate Name",
+    "Time": "Interview Date and Time",
+    "Meeting Link": "Google Meet Link",
+    "Status": "Confirmed"
   }}
- ],
- "actions": [
-  {{"label": "Edit", "event": "edit_candidate"}},
-  {{"label": "Delete", "event": "delete_candidate"}},
-  {{"label": "Schedule Interview", "event": "schedule_interview"}}
- ]
 }}
-
-Example Form JSON:
+3. If the action is converting a candidate to an employee (e.g., convert_to_employee) and mcp_results contains success, output:
 {{
-  "type": "form",
-  "title": "Add Candidate",
-  "fields": [
-    {{"name": "name", "type": "text"}},
-    {{"name": "email", "type": "email"}},
-    {{"name": "role", "type": "text"}}
-  ],
-  "submit_action": "create_candidate"
+  "type": "employee_profile",
+  "title": "Employee Profile Created",
+  "employee": {{
+    "name": "Employee Name",
+    "email": "Employee Email",
+    "department": "Engineering",
+    "position": "Backend Engineer",
+    "status": "Active"
+  }}
 }}
+4. If the action is document generation (e.g., generate_document) and mcp_results contains success, output:
+{{
+  "type": "document_preview",
+  "title": "Offer Letter - Candidate Name",
+  "candidate_name": "Candidate Name",
+  "candidate_role": "Backend Engineer",
+  "candidate_email": "candidate@email.com",
+  "generated_date": "July 5, 2026",
+  "content": "Full offer text...",
+  "url": "https://docs.google.com/document/d/..."
+}}
+5. For listing candidates or employees, output type "table" with proper columns (including an "actions" column) and contextual table-level/workspace-level actions in the "actions" array (e.g. "+ Add Candidate", "Generate Report", "Refresh"). Each row must contain an "actions" key with an array of action objects for that row (e.g., View Profile, Schedule Interview, Generate Offer, Convert Employee, Delete for candidates; and View Profile, Update Details, Documents for employees).
 
 Generate the appropriate JSON:
 """

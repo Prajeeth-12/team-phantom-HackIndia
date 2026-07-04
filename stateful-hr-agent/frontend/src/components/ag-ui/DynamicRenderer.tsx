@@ -21,6 +21,7 @@ import { DynamicWorkspaceOverview } from './DynamicWorkspaceOverview';
 import { DynamicAgentTrace } from './DynamicAgentTrace';
 import { DynamicDataExplorer } from './DynamicDataExplorer';
 import { DynamicMailView } from './DynamicMailView';
+import { DynamicEmployeeProfile } from './DynamicEmployeeProfile';
 
 export const DynamicRenderer: React.FC<DynamicRendererProps> = ({ uiConfig, actionState, onEmitEvent }) => {
   if (!uiConfig) return null;
@@ -49,6 +50,8 @@ export const DynamicRenderer: React.FC<DynamicRendererProps> = ({ uiConfig, acti
       return <DynamicCalendar {...(uiConfig as any)} onAction={handleAction} />;
     case 'dashboard_card':
       return <DynamicCard {...(uiConfig as any)} onAction={handleAction} />;
+    case 'employee_profile':
+      return <DynamicEmployeeProfile {...(uiConfig as any)} onAction={handleAction} />;
     case 'document_preview':
       return <DynamicDocument {...(uiConfig as any)} onAction={handleAction} />;
     case 'timeline':

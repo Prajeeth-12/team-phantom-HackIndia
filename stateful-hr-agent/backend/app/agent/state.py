@@ -18,3 +18,5 @@ class AgentState(TypedDict):
     plan: Optional[List[Dict[str, Any]]]
     mcp_results: Optional[List[Dict[str, Any]]]
     final_response: Optional[str]
+    visible_context: Optional[List[Dict[str, Any]]]
+    agent_trace_log: Optional[str]

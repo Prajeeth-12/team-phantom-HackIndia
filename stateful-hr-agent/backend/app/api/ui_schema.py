@@ -20,6 +20,13 @@ async def candidates_ui_schema(db: AsyncSession = Depends(get_db)):
             "role": c.role,
             "experience": c.experience,
             "status": c.status,
+            "actions": [
+                {"label": "View Profile", "event": "view_candidate", "type": "primary"},
+                {"label": "Schedule Interview", "event": "schedule_interview", "type": "default"},
+                {"label": "Generate Offer", "event": "generate_offer", "type": "default"},
+                {"label": "Convert Employee", "event": "convert_employee", "type": "default"},
+                {"label": "Delete", "event": "delete_candidate", "type": "danger"}
+            ]
         }
         for c in candidates
     ]
@@ -35,9 +42,14 @@ async def candidates_ui_schema(db: AsyncSession = Depends(get_db)):
             {"key": "role", "label": "Role"},
             {"key": "experience", "label": "Experience"},
             {"key": "status", "label": "Status"},
+            {"key": "actions", "label": "Actions"},
         ],
         "rows": rows,
-        "actions": ["Read", "Create", "Update", "Delete"],
+        "actions": [
+            {"label": "+ Add Candidate", "event": "show_create_form"},
+            {"label": "Generate Report", "event": "generate_report"},
+            {"label": "Refresh", "event": "read_candidates"}
+        ],
         "create_form": {
             "title": "Create Candidate",
             "submit_action": "create_candidate",
