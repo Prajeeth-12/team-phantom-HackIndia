@@ -27,7 +27,7 @@ Based on the intent '{intent}', entities {entities}, and required tools {require
 
 ALLOWED TOOLS AND ACTIONS:
 - postgres_mcp: get_candidates, create_candidate, update_candidate, delete_candidate, convert_to_employee
-- calendar_mcp: create_interview, update_event, cancel_event
+- calendar_mcp: get_events, create_interview, update_event, cancel_event
 - gmail_mcp: send_email, create_draft
 - docs_mcp: generate_document, update_document
 
@@ -36,7 +36,8 @@ CRITICAL RULES FOR MULTI-STEP WORKFLOWS:
 2. SCHEDULE INTERVIEW WORKFLOW: Step 1: get_candidates. Step 2: calendar_mcp.create_interview. Step 3: gmail_mcp.send_email.
 3. OFFER LETTER WORKFLOW: Step 1: get_candidates. Step 2: docs_mcp.generate_document.
 4. CONVERT EMPLOYEE WORKFLOW: Step 1: get_candidates. Step 2: postgres_mcp.convert_to_employee.
-5. NO EMPTY FORMS: AG-UI forms are fallbacks. If you have enough data to execute the MCP directly, DO IT. Do not return `render_form` unless you are absolutely missing data that cannot be inferred or generated.
+5. CALENDAR VIEW: If the user asks to see the calendar, schedule, or upcoming events, use calendar_mcp.get_events.
+6. NO EMPTY FORMS: AG-UI forms are fallbacks. If you have enough data to execute the MCP directly, DO IT. Do not return `render_form` unless you are absolutely missing data that cannot be inferred or generated.
 
 Return ONLY a JSON array of steps. Every step MUST have keys: step, tool, action, parameters.
 

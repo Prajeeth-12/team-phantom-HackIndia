@@ -81,6 +81,13 @@ Rules for generation based on Context:
   "url": "https://docs.google.com/document/d/..."
 }}
 5. For listing candidates or employees, output type "table" with proper columns (including an "actions" column) and contextual table-level/workspace-level actions in the "actions" array (e.g. "+ Add Candidate", "Generate Report", "Refresh"). Each row must contain an "actions" key with an array of action objects for that row (e.g., View Profile, Schedule Interview, Generate Offer, Convert Employee, Delete for candidates; and View Profile, Update Details, Documents for employees).
+6. If the action is fetching calendar events (e.g., get_events) and mcp_results contains success, output:
+{{
+  "type": "calendar",
+  "title": "Upcoming Events",
+  "events": [ array of events from data ]
+}}
+7. If intent is CREATE_EVENT or UPDATE_EVENT and mcp_results has no success data, output a form with fields (title, start_time, attendees) and submit_action 'create_event' (or update_event). For UPDATE_EVENT, include a hidden "event_id" field.
 
 Generate the appropriate JSON:
 """

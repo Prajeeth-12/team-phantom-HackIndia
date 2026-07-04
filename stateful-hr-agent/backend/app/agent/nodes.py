@@ -210,7 +210,12 @@ async def mcp_execution(state: AgentState) -> AgentState:
                         trace_log += f"🔍 Database MCP\nFound {data[0].get('name')}\n\n"
                         
             if server == "calendar" and result.get("status") == "success":
-                trace_log += f"📅 Calendar MCP\nInterview scheduled\n\n"
+                if action == "get_events":
+                    trace_log += f"📅 Calendar MCP\nRetrieved events\n\n"
+                elif action == "cancel_event":
+                    trace_log += f"📅 Calendar MCP\nEvent cancelled\n\n"
+                else:
+                    trace_log += f"📅 Calendar MCP\nEvent scheduled/updated\n\n"
             if server == "docs" and result.get("status") == "success":
                 trace_log += f"📄 Docs MCP\nOffer created\n\n"
             if server == "gmail" and result.get("status") == "success":

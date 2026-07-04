@@ -188,6 +188,26 @@ export default function Home() {
         await sendAgentCommand(`Schedule an interview for candidate ID ${pl?.id} tomorrow`, event);
         return;
     }
+    if (event === 'create_event') {
+        if (Object.keys(pl || {}).length === 0) {
+            await sendAgentCommand(`Show me a form to create a new calendar event`, event);
+        } else {
+            await sendAgentCommand(`Create a new calendar event with data: ${JSON.stringify(pl)}`, event);
+        }
+        return;
+    }
+    if (event === 'update_event') {
+        await sendAgentCommand(`Update calendar event ID ${pl?.event_id} with data: ${JSON.stringify(pl)}`, event);
+        return;
+    }
+    if (event === 'edit_event_form') {
+        await sendAgentCommand(`Show me an edit form for calendar event ID ${pl?.event_id} titled "${pl?.title}"`, event);
+        return;
+    }
+    if (event === 'cancel_event') {
+        await sendAgentCommand(`Cancel calendar event with ID: ${pl?.event_id}`, event);
+        return;
+    }
     
     await sendAgentCommand(`User requested action: ${event}. Payload: ${JSON.stringify(pl)}`, event);
   };
