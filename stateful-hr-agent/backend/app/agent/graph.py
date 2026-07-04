@@ -3,6 +3,7 @@ from app.agent.state import AgentState
 from app.agent.nodes import (
     input_node,
     intent_detection,
+    memory_retrieval,
     planning_node,
     tool_selection,
     mcp_execution,
@@ -16,6 +17,7 @@ workflow = StateGraph(AgentState)
 # Add nodes
 workflow.add_node("input", input_node)
 workflow.add_node("intent_detection", intent_detection)
+workflow.add_node("memory_retrieval", memory_retrieval)
 workflow.add_node("planning", planning_node)
 workflow.add_node("tool_selection", tool_selection)
 workflow.add_node("mcp_execution", mcp_execution)
@@ -25,7 +27,8 @@ workflow.add_node("response", response_node)
 # Add edges (Linear pipeline as requested)
 workflow.set_entry_point("input")
 workflow.add_edge("input", "intent_detection")
-workflow.add_edge("intent_detection", "planning")
+workflow.add_edge("intent_detection", "memory_retrieval")
+workflow.add_edge("memory_retrieval", "planning")
 workflow.add_edge("planning", "tool_selection")
 workflow.add_edge("tool_selection", "mcp_execution")
 workflow.add_edge("mcp_execution", "ag_ui_generation")

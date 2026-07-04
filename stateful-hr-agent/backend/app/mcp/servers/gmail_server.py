@@ -55,4 +55,7 @@ async def execute_gmail(action: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         except Exception as e:
              return {"status": "error", "message": f"Gmail API Error: {str(e)}"}
              
+    elif action == "create_draft":
+        return {"status": "success", "message": "Draft created in Gmail (mock)"}
+             
     return {"status": "error", "message": f"Unknown action: {action}"}

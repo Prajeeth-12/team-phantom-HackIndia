@@ -1,10 +1,12 @@
 import json
+import os
 from typing import Dict, Any
-from langchain_openai import ChatOpenAI
+from langchain_openai import AzureChatOpenAI
 from langchain_core.prompts import PromptTemplate
+from app.services.llm import get_agent_llm
 
-# Initialize LLM
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+# Initialize Azure LLM using centralized provider
+core_llm = get_agent_llm()
 
 UI_GENERATION_PROMPT = """
 You are the AG-UI (AI-Generated UI) system.
@@ -55,7 +57,7 @@ async def generate_ui(context_data: Dict[str, Any]) -> Dict[str, Any]:
     
     formatted_prompt = prompt.format(context_data=json.dumps(context_data, indent=2))
     
-    response = await llm.ainvoke(formatted_prompt)
+    response = await core_llm.ainvoke(formatted_prompt)
     
     try:
         raw_content = response.content.strip()

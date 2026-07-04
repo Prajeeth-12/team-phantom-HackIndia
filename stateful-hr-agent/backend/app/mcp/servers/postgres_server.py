@@ -61,6 +61,10 @@ async def execute_postgres(action: str, payload: Dict[str, Any]) -> Dict[str, An
                 return {"status": "success", "message": f"{db_candidate.name} officially converted to an Employee!"}
             return {"status": "error", "message": "candidate not found"}
             
+        elif action == "create_employee":
+            # Direct creation
+            return {"status": "success", "message": "Employee created directly (mock)"}
+            
         elif action == "create_interview":
             # Mocking interview creation since we didn't fully implement interview repo yet
             candidate_id = payload.get("candidate_id")

@@ -1,53 +1,27 @@
 import asyncio
-import os
-import sys
+from dotenv import load_dotenv
+load_dotenv(dotenv_path="../.env")
 
-# Add backend directory to Python path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from app.database.database import engine, AsyncSessionLocal, Base
-from app.database import models
+from sqlalchemy.future import select
+from app.database.database import AsyncSessionLocal
+from app.database.models import Candidate
 
 async def seed():
-    print("Setting up the database tables...")
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
-
-    print("Seeding candidates...")
-    async with AsyncSessionLocal() as session:
-        candidates = [
-            models.Candidate(
-                name="Alice Smith",
-                email="alice@example.com",
-                phone="555-0101",
-                role="Frontend Developer",
-                skills="React, Next.js, TypeScript",
-                experience=4,
-                status="applied"
-            ),
-            models.Candidate(
-                name="Bob Johnson",
-                email="bob@example.com",
-                phone="555-0102",
-                role="Backend Developer",
-                skills="Python, FastAPI, PostgreSQL",
-                experience=6,
-                status="interviewing"
-            ),
-            models.Candidate(
-                name="Charlie Brown",
-                email="charlie@example.com",
-                phone="555-0103",
-                role="DevOps Engineer",
-                skills="Docker, Kubernetes, AWS",
-                experience=3,
-                status="offered"
-            )
-        ]
-        session.add_all(candidates)
-        await session.commit()
-        print("Database seeded with demo candidates successfully!")
+    try:
+        async with AsyncSessionLocal() as db:
+            result = await db.execute(select(Candidate))
+            candidates = result.scalars().all()
+            if not candidates:
+                print("Seeding candidates...")
+                c1 = Candidate(name="Rahul Sharma", email="rahul@example.com", role="Frontend Developer", experience=3, status="Screening")
+                c2 = Candidate(name="Priya Nair", email="priya@example.com", role="AI Engineer", experience=2, status="Interview Scheduled")
+                db.add_all([c1, c2])
+                await db.commit()
+                print("Seeded successfully!")
+            else:
+                print(f"Candidates already exist ({len(candidates)} found).")
+    except Exception as e:
+        print(f"Error seeding DB: {e}")
 
 if __name__ == "__main__":
     asyncio.run(seed())

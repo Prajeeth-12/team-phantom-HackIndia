@@ -78,4 +78,10 @@ async def execute_calendar(action: str, payload: Dict[str, Any]) -> Dict[str, An
         except Exception as e:
             return {"status": "error", "message": f"Calendar API Error: {str(e)}"}
             
+    elif action == "reschedule_interview":
+        return {"status": "success", "message": "Interview rescheduled (mock)"}
+        
+    elif action == "cancel_event":
+        return {"status": "success", "message": "Event cancelled (mock)"}
+            
     return {"status": "error", "message": f"Unknown action: {action}"}

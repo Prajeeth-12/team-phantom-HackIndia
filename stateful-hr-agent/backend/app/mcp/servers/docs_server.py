@@ -73,4 +73,7 @@ async def execute_docs(action: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         except Exception as e:
             return {"status": "error", "message": f"Docs API Error: {str(e)}"}
             
+    elif action == "update_document":
+        return {"status": "success", "message": "Document updated (mock)"}
+            
     return {"status": "error", "message": f"Unknown action: {action}"}

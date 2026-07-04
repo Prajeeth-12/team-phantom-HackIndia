@@ -18,7 +18,7 @@ class Candidate(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     interviews = relationship("Interview", back_populates="candidate")
-    offers = relationship("Offer", back_populates="candidate")
+    offers = relationship("OfferLetter", back_populates="candidate")
 
 class Employee(Base):
     __tablename__ = "employees"
@@ -40,8 +40,8 @@ class Interview(Base):
 
     candidate = relationship("Candidate", back_populates="interviews")
 
-class Offer(Base):
-    __tablename__ = "offers"
+class OfferLetter(Base):
+    __tablename__ = "offer_letters"
 
     id = Column(Integer, primary_key=True, index=True)
     candidate_id = Column(Integer, ForeignKey("candidates.id"))
@@ -49,3 +49,17 @@ class Offer(Base):
     status = Column(String, default="pending")
 
     candidate = relationship("Candidate", back_populates="offers")
+
+class ConversationMemory(Base):
+    __tablename__ = "conversation_memory"
+
+    id = Column(Integer, primary_key=True, index=True)
+    thread_id = Column(String, index=True)
+    messages = Column(Text)
+
+class AgentState(Base):
+    __tablename__ = "agent_state"
+
+    id = Column(Integer, primary_key=True, index=True)
+    thread_id = Column(String, unique=True, index=True)
+    current_state = Column(Text)

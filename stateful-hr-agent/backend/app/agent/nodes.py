@@ -1,18 +1,20 @@
 import json
+import os
 from langchain_core.messages import AIMessage
-from langchain_openai import ChatOpenAI
+from langchain_openai import AzureChatOpenAI
 from app.agent.state import AgentState
 from app.agent.prompts import (
     INTENT_DETECTION_PROMPT, 
     PLANNING_PROMPT, 
     TOOL_SELECTION_PROMPT, 
-    AG_UI_PROMPT,
     RESPONSE_PROMPT
 )
 from app.mcp.client import mcp_client
+from app.services.llm import get_agent_llm, get_fast_llm
 
-# Initialize LLM
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+# Initialize LLMs using the centralized provider
+core_llm = get_agent_llm()
+content_llm = get_fast_llm()
 
 async def input_node(state: AgentState) -> AgentState:
     # Passthrough
@@ -25,15 +27,19 @@ async def intent_detection(state: AgentState) -> AgentState:
         current_workflow=state.get("current_workflow"),
         user_message=user_message
     )
-    response = await llm.ainvoke(prompt)
+    response = await core_llm.ainvoke(prompt)
     return {"intent": response.content.strip()}
+
+async def memory_retrieval(state: AgentState) -> AgentState:
+    # Future integration point for reading ConversationMemory and AgentState from Postgres DB
+    return state
 
 async def planning_node(state: AgentState) -> AgentState:
     prompt = PLANNING_PROMPT.format(
         intent=state.get("intent"),
         selected_candidate=state.get("selected_candidate")
     )
-    response = await llm.ainvoke(prompt)
+    response = await core_llm.ainvoke(prompt)
     return {"plan": response.content.strip()}
 
 async def tool_selection(state: AgentState) -> AgentState:
@@ -41,7 +47,7 @@ async def tool_selection(state: AgentState) -> AgentState:
         intent=state.get("intent"),
         plan=state.get("plan")
     )
-    response = await llm.ainvoke(prompt)
+    response = await core_llm.ainvoke(prompt)
     try:
         raw_content = response.content.replace("```json", "").replace("```", "").strip()
         tool_data = json.loads(raw_content)
@@ -66,6 +72,17 @@ async def mcp_execution(state: AgentState) -> AgentState:
     if action == "get_candidates" and "name" in payload:
         # User is looking up someone, update state
         selected_candidate = payload["name"]
+
+    # Use GPT-4o-mini (content_llm) dynamically for content tasks
+    if server == "gmail" and action == "send_email":
+        content_prompt = f"Write a professional HR email regarding an interview for {payload.get('to', selected_candidate)}. Keep it concise."
+        res = await content_llm.ainvoke(content_prompt)
+        payload["body"] = res.content
+        
+    elif server == "docs" and action == "generate_document":
+        content_prompt = f"Write a professional HR Offer Letter for {payload.get('candidate_name', selected_candidate)}. Include a warm welcome and standard placeholder terms."
+        res = await content_llm.ainvoke(content_prompt)
+        payload["content"] = res.content
         
     result = await mcp_client.execute(server, action, payload)
     
@@ -95,5 +112,5 @@ async def response_node(state: AgentState) -> AgentState:
         mcp_result=state.get("mcp_result"),
         last_ui=state.get("last_ui")
     )
-    response = await llm.ainvoke(prompt)
+    response = await core_llm.ainvoke(prompt)
     return {"messages": [AIMessage(content=response.content)]}

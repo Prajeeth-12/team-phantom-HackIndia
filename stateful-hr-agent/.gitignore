@@ -53,3 +53,7 @@ build/
 *.swo
 *~
 .DS_Store
+
+# Security
+credentials.json
+token_*.json
