@@ -15,7 +15,7 @@ class Candidate(Base):
     experience = Column(Integer, default=0)
     status = Column(String, default="applied")
     resume_url = Column(String, nullable=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=datetime.utcnow)
 
     interviews = relationship("Interview", back_populates="candidate")
     offers = relationship("OfferLetter", back_populates="candidate")

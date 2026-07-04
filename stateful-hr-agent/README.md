@@ -12,17 +12,18 @@ A stateful AI HR Agent Platform built with Next.js 15, FastAPI, LangGraph, and P
 
 ## Setup Instructions
 
-1. **Database:**
+1. **Environment:**
    ```bash
    cp .env.example .env
-   docker-compose up -d
    ```
+
+   Set `DATABASE_URL` to an available PostgreSQL instance. The app now expects the database to be provided by your local environment or hosted service.
 
 2. **Backend:**
    ```bash
    cd backend
    python -m venv venv
-   source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+   source venv/bin/activate  # On Windows use `venv\\Scripts\\activate`
    pip install -r requirements.txt
    ```
 
@@ -32,3 +33,8 @@ A stateful AI HR Agent Platform built with Next.js 15, FastAPI, LangGraph, and P
    npm install
    npm run dev
    ```
+
+4. **Run the backend:**
+   ```bash
+   cd backend
+   .\\venv\\Scripts\\python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000

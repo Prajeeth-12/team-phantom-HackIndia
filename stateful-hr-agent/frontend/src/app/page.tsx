@@ -103,6 +103,47 @@ export default function Home() {
       return;
     }
 
+    if (event === 'update_action') {
+      try {
+        const { id, ...updateData } = pl;
+        const res = await fetch(`http://localhost:8000/api/candidates/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updateData)
+        });
+        if (!res.ok) {
+          console.error('Failed to update candidate', await res.text());
+          return;
+        }
+        const updated = await res.json();
+        const schemaRes = await fetch('http://localhost:8000/api/ui-schema/candidates');
+        if (schemaRes.ok) setUiConfig(await schemaRes.json());
+        setMessages(prev => [...prev, { role: 'agent', text: `Updated candidate ${updated.name}` }]);
+      } catch (e) {
+        console.error(e);
+      }
+      return;
+    }
+
+    if (event === 'delete_action') {
+      try {
+        const { id } = pl;
+        const res = await fetch(`http://localhost:8000/api/candidates/${id}`, {
+          method: 'DELETE'
+        });
+        if (!res.ok) {
+          console.error('Failed to delete candidate', await res.text());
+          return;
+        }
+        const schemaRes = await fetch('http://localhost:8000/api/ui-schema/candidates');
+        if (schemaRes.ok) setUiConfig(await schemaRes.json());
+        setMessages(prev => [...prev, { role: 'agent', text: `Deleted candidate ID ${id}` }]);
+      } catch (e) {
+        console.error(e);
+      }
+      return;
+    }
+
     // default: send event to LLM/agent as message
     setMessages(prev => [...prev, { role: 'user', text: `[System Event: ${event}]` }]);
     sendMessage(`The user executed action: ${event}. Payload: ${JSON.stringify(pl)}. Update the database and UI accordingly.`, true);

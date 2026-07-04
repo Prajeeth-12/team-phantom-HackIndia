@@ -22,5 +22,5 @@ def get_fast_llm():
     return AzureChatOpenAI(
         azure_deployment=os.getenv("AZURE_OPENAI_FAST_DEPLOYMENT", "gpt-4o-mini"),
         api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2025-01-01-preview"),
-        temperature=0.7
+        temperature=1
     )
