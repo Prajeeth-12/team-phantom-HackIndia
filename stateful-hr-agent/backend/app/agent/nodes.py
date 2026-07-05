@@ -64,6 +64,7 @@ ACTION_MAP = {
     "view_calendar": "get_events",
     "show_calendar": "get_events",
     "fetch_events": "get_events",
+    "generate_offer": "generate_document",
 }
 
 async def input_node(state: AgentState) -> AgentState:
@@ -157,7 +158,8 @@ async def planning_node(state: AgentState) -> AgentState:
             plan = []
         if "employee" in intent.lower() and any(verb in intent.lower() for verb in ["list", "show", "get", "view", "all"]):
             plan = [{"step": 1, "tool": "postgres_mcp", "action": "get_employees", "parameters": {}}]
-        plan = enforce_plan_guardrails(intent, entities, plan)        print(f"\n[3] PLAN\n{json.dumps(plan, indent=1)}")
+        plan = enforce_plan_guardrails(intent, entities, plan)
+        print(f"\n[3] PLAN\n{json.dumps(plan, indent=1)}")
         return {"plan": plan}
     except Exception as e:
         print(f"\n[3] PLAN\nFAILED: {e}")
@@ -206,9 +208,12 @@ async def mcp_execution(state: AgentState) -> AgentState:
             action = "get_events"
         if server == "postgres" and action == "convert_to_employee":
             action = "update_candidate"
+            if not isinstance(step.get("parameters"), dict):
+                step["parameters"] = {}
             step["parameters"]["status"] = "employee"
-            
-        payload = step.get("parameters", {})
+
+        raw_payload = step.get("parameters", {})
+        payload = raw_payload if isinstance(raw_payload, dict) else {}
 
         # Deterministic guardrail for prompts like: "names starting with p"
         if server == "postgres" and action == "get_candidates":
@@ -354,4 +359,3 @@ Summary:"""
         summary = f"Workflow completed successfully for {selected_candidate}."
         
     return {"messages": [AIMessage(content=summary)]}
-

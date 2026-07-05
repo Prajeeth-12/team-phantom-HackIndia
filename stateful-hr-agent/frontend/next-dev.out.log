@@ -7,3 +7,40 @@
    - Network:      http://127.0.0.1:3000
 
  ✓ Starting...
+ ✓ Ready in 11s
+ ○ Compiling / ...
+ ✓ Compiled / in 15s (668 modules)
+ GET / 200 in 44ms
+ GET / 200 in 90ms
+ GET / 200 in 66ms
+ GET / 200 in 182ms
+ GET / 200 in 121ms
+ ✓ Compiled in 2.7s (668 modules)
+ GET / 200 in 483ms
+ ✓ Compiled in 482ms (668 modules)
+ GET / 200 in 125ms
+ ✓ Compiled in 608ms (668 modules)
+ GET / 200 in 102ms
+ GET / 200 in 829ms
+ GET / 200 in 334ms
+ ✓ Compiled in 2.5s (668 modules)
+ GET / 200 in 1031ms
+ GET / 200 in 895ms
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 18.2s (1000 modules)
+ GET / 500 in 29589ms
+ GET / 500 in 29605ms
+ GET / 200 in 740ms
+ GET / 200 in 761ms
+ GET / 200 in 104ms
+ GET / 200 in 91ms
+ GET / 200 in 83ms
+ GET / 200 in 74ms
+ GET / 200 in 672ms
+ GET / 200 in 188ms
+ ✓ Compiled in 1694ms (1014 modules)
+ GET / 200 in 470ms
+ GET / 200 in 150ms
+ ✓ Compiled in 2.3s (1014 modules)
+ GET / 200 in 203ms
+ GET / 200 in 70ms

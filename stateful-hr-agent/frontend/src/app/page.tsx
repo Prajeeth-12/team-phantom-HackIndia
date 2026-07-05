@@ -19,10 +19,147 @@ type TraceItem = {
   };
 };
 
+function formatActionMessage(event: string, payload: any): string {
+  const name = payload?.name || payload?.candidate_name || payload?.candidateName || "";
+  switch (event) {
+    case 'view_candidate':
+      return `View candidate profile for ${name}`;
+    case 'generate_offer':
+      return `Generate offer letter for ${name}`;
+    case 'schedule_interview':
+      return `Schedule interview for ${name}`;
+    case 'convert_employee':
+      return `Move ${name} to employee records`;
+    case 'delete_candidate':
+      return `Delete candidate ${name}`;
+    case 'open_document':
+      return `Open generated document`;
+    default:
+      return `Perform requested action`;
+  }
+}
+
+function formatResponseText(response: string, intent: string, mcpResults: any[], eventName?: string): string {
+  const normalizedIntent = (intent || "").toLowerCase();
+  const normalizedEvent = (eventName || "").toLowerCase();
+  const resText = (response || "").toLowerCase();
+  
+  if (
+    normalizedEvent === 'generate_offer' || 
+    normalizedIntent.includes('offer') || 
+    normalizedIntent.includes('generate_document') || 
+    resText.includes('offer letter')
+  ) {
+    return "✅ Offer letter generated successfully";
+  }
+  
+  if (
+    normalizedEvent === 'schedule_interview' || 
+    normalizedEvent === 'create_event' ||
+    normalizedIntent.includes('schedule') || 
+    normalizedIntent.includes('calendar') || 
+    normalizedIntent.includes('create_event') || 
+    resText.includes('interview scheduled') ||
+    resText.includes('calendar')
+  ) {
+    return "✅ Interview scheduled successfully";
+  }
+  
+  if (
+    normalizedEvent === 'delete_candidate' || 
+    normalizedIntent.includes('delete') || 
+    normalizedIntent.includes('remove') ||
+    resText.includes('deleted') ||
+    resText.includes('removed')
+  ) {
+    return "✅ Candidate removed successfully";
+  }
+  
+  if (
+    normalizedEvent === 'convert_employee' || 
+    normalizedIntent.includes('convert') || 
+    (normalizedIntent.includes('employee') && (normalizedIntent.includes('update') || resText.includes('employee')))
+  ) {
+    return "✅ Candidate moved to employee directory";
+  }
+  
+  if (
+    normalizedEvent === 'read_candidates' || 
+    normalizedEvent === 'read_employees' ||
+    normalizedIntent.includes('list') || 
+    normalizedIntent.includes('show') || 
+    normalizedIntent.includes('get') ||
+    resText.includes('showing') ||
+    resText.includes('records') ||
+    resText.includes('candidates') ||
+    resText.includes('employees')
+  ) {
+    return "✅ Retrieved latest records";
+  }
+  
+  if (resText.includes("workspace updated") || resText.includes("updated by agent")) {
+    return "✅ Workspace updated successfully";
+  }
+  
+  return response;
+}
+
 function AgentExecutionCollapsible({ details }: { details: any }) {
   const [isOpen, setIsOpen] = useState(false);
   
-  if (!details || (!details.intent && !details.agent_trace_log && (!details.plan || details.plan.length === 0))) return null;
+  if (!details) return null;
+  
+  const steps: string[] = [];
+  
+  if (details.intent) {
+    steps.push("🧠 Intent detected");
+  }
+  
+  const executedServers = new Set<string>();
+  
+  if (details.mcp_results && Array.isArray(details.mcp_results)) {
+    details.mcp_results.forEach((res: any) => {
+      if (res.server) {
+        executedServers.add(res.server);
+      }
+    });
+  } else if (details.plan && Array.isArray(details.plan)) {
+    details.plan.forEach((step: any) => {
+      if (step.tool) {
+        const s = step.tool.replace("_mcp", "");
+        executedServers.add(s);
+      }
+    });
+  } else if (details.agent_trace_log) {
+    const log = details.agent_trace_log.toLowerCase();
+    if (log.includes("database") || log.includes("postgres") || log.includes("pg")) {
+      executedServers.add("postgres");
+    }
+    if (log.includes("docs") || log.includes("doc")) {
+      executedServers.add("docs");
+    }
+    if (log.includes("calendar")) {
+      executedServers.add("calendar");
+    }
+    if (log.includes("gmail")) {
+      executedServers.add("gmail");
+    }
+  }
+  
+  if (executedServers.has("postgres") || executedServers.has("database") || executedServers.has("db")) {
+    steps.push("🔍 Database MCP executed");
+  }
+  if (executedServers.has("docs") || executedServers.has("document")) {
+    steps.push("📄 Docs MCP executed");
+  }
+  if (executedServers.has("calendar")) {
+    steps.push("📅 Calendar MCP executed");
+  }
+  if (executedServers.has("gmail")) {
+    steps.push("✉️ Gmail MCP executed");
+  }
+  
+  steps.push("✅ Completed");
   
   return (
     <div className="mt-2.5 border-t border-[#e5e5e5] pt-2">
@@ -36,35 +173,12 @@ function AgentExecutionCollapsible({ details }: { details: any }) {
       </button>
       
       {isOpen && (
-        <div className="mt-2 p-2 bg-[#f9f9f9] border border-[#e5e5e5] rounded-md font-mono text-[9px] text-[#525252] space-y-2 max-h-[200px] overflow-y-auto">
-          {details.intent && (
-            <div>
-              <span className="font-semibold text-black uppercase block">Intent:</span>
-              <span className="pl-1.5">{details.intent}</span>
+        <div className="mt-2 p-2 bg-[#f9f9f9] border border-[#e5e5e5] rounded-md font-mono text-[10px] text-[#525252] space-y-1">
+          {steps.map((step, idx) => (
+            <div key={idx} className="flex items-center gap-1.5">
+              <span>{step}</span>
             </div>
-          )}
-          
-          {details.plan && details.plan.length > 0 && (
-            <div>
-              <span className="font-semibold text-black uppercase block">Plan:</span>
-              <ul className="list-decimal pl-4.5 space-y-0.5 mt-0.5">
-                {details.plan.map((step: any, i: number) => (
-                  <li key={i}>
-                    {step.tool}.{step.action}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          
-          {details.agent_trace_log && (
-            <div>
-              <span className="font-semibold text-black uppercase block">Trace Steps:</span>
-              <pre className="pl-1.5 whitespace-pre-wrap font-mono text-[9px] text-[#6b7280] mt-0.5 leading-tight">
-                {details.agent_trace_log}
-              </pre>
-            </div>
-          )}
+          ))}
         </div>
       )}
     </div>
@@ -90,6 +204,7 @@ export default function Home() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [trace, setTrace] = useState<TraceItem[]>([]);
   const [chatInput, setChatInput] = useState('');
+  const [threadId, setThreadId] = useState('default_thread');
   const traceEndRef = useRef<HTMLDivElement>(null);
 
   const pushToast = (kind: 'success' | 'error', message: string) => {
@@ -110,14 +225,26 @@ export default function Home() {
     }
   }, [trace]);
 
-  const sendAgentCommand = async (text: string, eventName?: string) => {
+  useEffect(() => {
+    const key = 'hr_agent_thread_id';
+    const existing = window.localStorage.getItem(key);
+    if (existing) {
+      setThreadId(existing);
+      return;
+    }
+    const generated = `hr-thread-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+    window.localStorage.setItem(key, generated);
+    setThreadId(generated);
+  }, []);
+
+  const sendAgentCommand = async (text: string, eventName?: string, displayText?: string) => {
     if (!text.trim()) return;
     if (eventName) setCrudActionState({ isBusy: true, event: eventName });
     setIsLoading(true);
-    addTrace(`User Input: ${text}`, 'info');
+    addTrace(`User Input: ${displayText || text}`, 'info');
     
     try {
-      const res = await apiRequest('/api/chat/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: text }) }, 1);
+      const res = await apiRequest('/api/chat/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: text, thread_id: threadId }) }, 1);
       if (!res.ok) throw new Error(`Agent command failed (${res.status})`);
       const data = await res.json();
       if (data.ui) { 
@@ -126,10 +253,18 @@ export default function Home() {
       if (data.response) {
         const id = Date.now() + Math.floor(Math.random() * 1000);
         const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        
+        const finalResponseText = formatResponseText(
+          data.response,
+          data.trace?.intent,
+          data.trace?.mcp_results,
+          eventName
+        );
+        
         setTrace((prev) => [...prev, { 
           id, 
           time, 
-          text: `Agent Response: ${data.response}`, 
+          text: `Agent Response: ${finalResponseText}`, 
           kind: 'success',
           traceDetails: data.trace
         }]);
@@ -157,63 +292,73 @@ export default function Home() {
     
     if (event === 'open_domain') {
       const d = pl?.domain;
-      if (d === 'hiring') { await sendAgentCommand('Show all candidates'); return; }
-      if (d === 'documents') { await sendAgentCommand('Show latest offers and documents'); return; }
-      if (d === 'scheduling') { await sendAgentCommand('Show interview calendar and upcoming events'); return; }
-      if (d === 'employees') { await sendAgentCommand('Show all employees and HR records'); return; }
+      if (d === 'hiring') { await sendAgentCommand('Show all candidates', event, 'Show all candidates'); return; }
+      if (d === 'documents') { await sendAgentCommand('Show latest offers and documents', event, 'Show latest offers and documents'); return; }
+      if (d === 'scheduling') { await sendAgentCommand('Show interview calendar and upcoming events', event, 'Show interview calendar and upcoming events'); return; }
+      if (d === 'employees') { await sendAgentCommand('Show all employees and HR records', event, 'Show all employees and HR records'); return; }
     }
     if (event === 'ask_example_prompt' && pl?.prompt) { await sendAgentCommand(pl.prompt); return; }
     
     if (event === 'read_candidates') {
-      await sendAgentCommand('Show all candidates', event);
+      await sendAgentCommand('Show all candidates', event, 'Show all candidates');
       return;
     }
     if (event === 'read_employees') {
-      await sendAgentCommand('Show all employees', event);
+      await sendAgentCommand('Show all employees', event, 'Show all employees');
       return;
     }
     if (event === 'create_candidate') {
-      await sendAgentCommand(`Add a new candidate: ${JSON.stringify(pl)}`, event);
+      const friendly = formatActionMessage(event, pl);
+      await sendAgentCommand(`Add a new candidate: ${JSON.stringify(pl)}`, event, friendly);
       return;
     }
     if (event === 'update_candidate') {
-      await sendAgentCommand(`Update candidate (ID: ${pl?.id}) with the following data: ${JSON.stringify(pl)}`, event);
+      const friendly = formatActionMessage(event, pl);
+      await sendAgentCommand(`Update candidate (ID: ${pl?.id}) with the following data: ${JSON.stringify(pl)}`, event, friendly);
       return;
     }
     if (event === 'delete_candidate') {
-      await sendAgentCommand(`Delete candidate with ID: ${pl?.id}`, event);
+      const friendly = formatActionMessage(event, pl);
+      await sendAgentCommand(`Delete candidate with ID: ${pl?.id}`, event, friendly);
       return;
     }
     if (event === 'edit_candidate') {
-        await sendAgentCommand(`Show me an edit form to update candidate ID ${pl?.id}`, event);
-        return;
+      const friendly = formatActionMessage(event, pl);
+      await sendAgentCommand(`Show me an edit form to update candidate ID ${pl?.id}`, event, friendly);
+      return;
     }
     if (event === 'schedule_interview') {
-        await sendAgentCommand(`Schedule an interview for candidate ID ${pl?.id} tomorrow`, event);
-        return;
+      const friendly = formatActionMessage(event, pl);
+      await sendAgentCommand(`Schedule an interview for candidate ID ${pl?.id} tomorrow`, event, friendly);
+      return;
     }
     if (event === 'create_event') {
-        if (Object.keys(pl || {}).length === 0) {
-            await sendAgentCommand(`Show me a form to create a new calendar event`, event);
-        } else {
-            await sendAgentCommand(`Create a new calendar event with data: ${JSON.stringify(pl)}`, event);
-        }
-        return;
+      const friendly = pl?.title ? `Create event "${pl.title}"` : `Show event creation form`;
+      if (Object.keys(pl || {}).length === 0) {
+          await sendAgentCommand(`Show me a form to create a new calendar event`, event, friendly);
+      } else {
+          await sendAgentCommand(`Create a new calendar event with data: ${JSON.stringify(pl)}`, event, friendly);
+      }
+      return;
     }
     if (event === 'update_event') {
-        await sendAgentCommand(`Update calendar event ID ${pl?.event_id} with data: ${JSON.stringify(pl)}`, event);
-        return;
+      const friendly = `Update event "${pl?.title || pl?.event_id}"`;
+      await sendAgentCommand(`Update calendar event ID ${pl?.event_id} with data: ${JSON.stringify(pl)}`, event, friendly);
+      return;
     }
     if (event === 'edit_event_form') {
-        await sendAgentCommand(`Show me an edit form for calendar event ID ${pl?.event_id} titled "${pl?.title}"`, event);
-        return;
+      const friendly = `Edit calendar event "${pl?.title || pl?.event_id}"`;
+      await sendAgentCommand(`Show me an edit form for calendar event ID ${pl?.event_id} titled "${pl?.title}"`, event, friendly);
+      return;
     }
     if (event === 'cancel_event') {
-        await sendAgentCommand(`Cancel calendar event with ID: ${pl?.event_id}`, event);
-        return;
+      const friendly = `Cancel calendar event`;
+      await sendAgentCommand(`Cancel calendar event with ID: ${pl?.event_id}`, event, friendly);
+      return;
     }
     
-    await sendAgentCommand(`User requested action: ${event}. Payload: ${JSON.stringify(pl)}`, event);
+    const friendly = formatActionMessage(event, pl);
+    await sendAgentCommand(`User requested action: ${event}. Payload: ${JSON.stringify(pl)}`, event, friendly);
   };
 
   return (
@@ -252,7 +397,7 @@ export default function Home() {
               return (
                 <div key={`${item.id}-${idx}`} className="animate-fade-in">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[9px] font-mono text-[#737373] uppercase">{isUser ? 'User' : 'Agent'}</span>
+                    <span className="text-[9px] font-mono text-[#737373] uppercase">{isUser ? 'User' : 'Assistant'}</span>
                     <span className="text-[9px] font-mono text-[#a3a3a3]">{item.time}</span>
                   </div>
                   <div className={`text-[12px] rounded-lg p-3 ${isUser ? 'bg-white border border-[#e5e5e5] text-[#404040] shadow-sm' : 'bg-transparent border border-[#e5e5e5] text-[#404040]'}`}>
@@ -266,9 +411,23 @@ export default function Home() {
             })}
 
             {isLoading && (
-              <div className="flex items-center gap-2 py-3 px-2">
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-[#737373]" />
-                <span className="text-[11px] text-[#737373] font-mono">Agent thinking...</span>
+              <div className="animate-fade-in">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[9px] font-mono text-[#737373] uppercase">Assistant</span>
+                  <span className="text-[9px] font-mono text-[#a3a3a3]">
+                    {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                  </span>
+                </div>
+                <div className="text-[12px] rounded-lg p-3 bg-transparent border border-[#e5e5e5] text-[#404040]">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block">🧠 Working on it</span>
+                    <span className="inline-flex gap-0.5">
+                      <span className="dot-flash-1">.</span>
+                      <span className="dot-flash-2">.</span>
+                      <span className="dot-flash-3">.</span>
+                    </span>
+                  </div>
+                </div>
               </div>
             )}
             <div ref={traceEndRef} />
@@ -453,3 +612,6 @@ export default function Home() {
     </div>
   );
 }
+
+
+

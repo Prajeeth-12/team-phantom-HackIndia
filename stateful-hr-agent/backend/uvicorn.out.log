@@ -1,120 +1,289 @@
-2026-07-04 22:09:00,615 INFO sqlalchemy.engine.Engine select pg_catalog.version()
-2026-07-04 22:09:00,615 INFO sqlalchemy.engine.Engine [raw sql] ()
-2026-07-04 22:09:01,156 INFO sqlalchemy.engine.Engine select current_schema()
-2026-07-04 22:09:01,156 INFO sqlalchemy.engine.Engine [raw sql] ()
-2026-07-04 22:09:02,318 INFO sqlalchemy.engine.Engine show standard_conforming_strings
-2026-07-04 22:09:02,318 INFO sqlalchemy.engine.Engine [raw sql] ()
-2026-07-04 22:09:03,185 INFO sqlalchemy.engine.Engine BEGIN (implicit)
-2026-07-04 22:09:03,189 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_class.relname 
+2026-07-05 11:11:37,190 INFO sqlalchemy.engine.Engine select pg_catalog.version()
+2026-07-05 11:11:37,190 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-07-05 11:11:39,782 INFO sqlalchemy.engine.Engine select current_schema()
+2026-07-05 11:11:39,783 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-07-05 11:11:41,481 INFO sqlalchemy.engine.Engine show standard_conforming_strings
+2026-07-05 11:11:41,483 INFO sqlalchemy.engine.Engine [raw sql] ()
+2026-07-05 11:11:42,755 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-05 11:11:42,762 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_class.relname 
 FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
 WHERE pg_catalog.pg_class.relname = $1::VARCHAR AND pg_catalog.pg_class.relkind = ANY (ARRAY[$2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != $7::VARCHAR
-2026-07-04 22:09:03,189 INFO sqlalchemy.engine.Engine [generated in 0.00049s] ('candidates', 'r', 'p', 'f', 'v', 'm', 'pg_catalog')
-2026-07-04 22:09:03,849 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_class.relname 
+2026-07-05 11:11:42,762 INFO sqlalchemy.engine.Engine [generated in 0.00062s] ('candidates', 'r', 'p', 'f', 'v', 'm', 'pg_catalog')
+2026-07-05 11:11:44,484 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_class.relname 
 FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
 WHERE pg_catalog.pg_class.relname = $1::VARCHAR AND pg_catalog.pg_class.relkind = ANY (ARRAY[$2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != $7::VARCHAR
-2026-07-04 22:09:03,850 INFO sqlalchemy.engine.Engine [cached since 0.6606s ago] ('employees', 'r', 'p', 'f', 'v', 'm', 'pg_catalog')
-2026-07-04 22:09:04,617 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_class.relname 
+2026-07-05 11:11:44,512 INFO sqlalchemy.engine.Engine [cached since 1.751s ago] ('employees', 'r', 'p', 'f', 'v', 'm', 'pg_catalog')
+2026-07-05 11:11:45,225 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_class.relname 
 FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
 WHERE pg_catalog.pg_class.relname = $1::VARCHAR AND pg_catalog.pg_class.relkind = ANY (ARRAY[$2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != $7::VARCHAR
-2026-07-04 22:09:04,634 INFO sqlalchemy.engine.Engine [cached since 1.445s ago] ('interviews', 'r', 'p', 'f', 'v', 'm', 'pg_catalog')
-2026-07-04 22:09:05,127 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_class.relname 
+2026-07-05 11:11:45,243 INFO sqlalchemy.engine.Engine [cached since 2.481s ago] ('interviews', 'r', 'p', 'f', 'v', 'm', 'pg_catalog')
+2026-07-05 11:11:46,019 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_class.relname 
 FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
 WHERE pg_catalog.pg_class.relname = $1::VARCHAR AND pg_catalog.pg_class.relkind = ANY (ARRAY[$2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != $7::VARCHAR
-2026-07-04 22:09:05,140 INFO sqlalchemy.engine.Engine [cached since 1.951s ago] ('offer_letters', 'r', 'p', 'f', 'v', 'm', 'pg_catalog')
-2026-07-04 22:09:05,733 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_class.relname 
+2026-07-05 11:11:46,020 INFO sqlalchemy.engine.Engine [cached since 3.259s ago] ('offer_letters', 'r', 'p', 'f', 'v', 'm', 'pg_catalog')
+2026-07-05 11:11:46,721 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_class.relname 
 FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
 WHERE pg_catalog.pg_class.relname = $1::VARCHAR AND pg_catalog.pg_class.relkind = ANY (ARRAY[$2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != $7::VARCHAR
-2026-07-04 22:09:05,746 INFO sqlalchemy.engine.Engine [cached since 2.557s ago] ('conversation_memory', 'r', 'p', 'f', 'v', 'm', 'pg_catalog')
-2026-07-04 22:09:06,254 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_class.relname 
+2026-07-05 11:11:46,722 INFO sqlalchemy.engine.Engine [cached since 3.961s ago] ('conversation_memory', 'r', 'p', 'f', 'v', 'm', 'pg_catalog')
+2026-07-05 11:11:47,845 INFO sqlalchemy.engine.Engine SELECT pg_catalog.pg_class.relname 
 FROM pg_catalog.pg_class JOIN pg_catalog.pg_namespace ON pg_catalog.pg_namespace.oid = pg_catalog.pg_class.relnamespace 
 WHERE pg_catalog.pg_class.relname = $1::VARCHAR AND pg_catalog.pg_class.relkind = ANY (ARRAY[$2::VARCHAR, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR]) AND pg_catalog.pg_table_is_visible(pg_catalog.pg_class.oid) AND pg_catalog.pg_namespace.nspname != $7::VARCHAR
-2026-07-04 22:09:06,255 INFO sqlalchemy.engine.Engine [cached since 3.065s ago] ('agent_state', 'r', 'p', 'f', 'v', 'm', 'pg_catalog')
-2026-07-04 22:09:06,996 INFO sqlalchemy.engine.Engine COMMIT
-2026-07-04 22:09:07,424 INFO sqlalchemy.engine.Engine BEGIN (implicit)
-2026-07-04 22:09:07,425 INFO sqlalchemy.engine.Engine SELECT 1
-2026-07-04 22:09:07,425 INFO sqlalchemy.engine.Engine [generated in 0.00032s] ()
-2026-07-04 22:09:08,391 INFO sqlalchemy.engine.Engine COMMIT
-INFO:     127.0.0.1:57901 - "GET /health HTTP/1.1" 200 OK
-2026-07-04 22:09:18,517 INFO sqlalchemy.engine.Engine BEGIN (implicit)
-2026-07-04 22:09:18,527 INFO sqlalchemy.engine.Engine SELECT candidates.id, candidates.name, candidates.email, candidates.phone, candidates.role, candidates.skills, candidates.experience, candidates.status, candidates.resume_url, candidates.created_at 
+2026-07-05 11:11:47,847 INFO sqlalchemy.engine.Engine [cached since 5.085s ago] ('agent_state', 'r', 'p', 'f', 'v', 'm', 'pg_catalog')
+2026-07-05 11:11:48,391 INFO sqlalchemy.engine.Engine COMMIT
+2026-07-05 11:12:02,500 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-05 11:12:02,513 INFO sqlalchemy.engine.Engine SELECT agent_state.id, agent_state.thread_id, agent_state.current_state 
+FROM agent_state 
+WHERE agent_state.thread_id = $1::VARCHAR
+2026-07-05 11:12:02,513 INFO sqlalchemy.engine.Engine [generated in 0.00111s] ('debug-state-thread',)
+2026-07-05 11:12:03,238 INFO sqlalchemy.engine.Engine SELECT conversation_memory.id, conversation_memory.thread_id, conversation_memory.messages 
+FROM conversation_memory 
+WHERE conversation_memory.thread_id = $1::VARCHAR
+2026-07-05 11:12:03,239 INFO sqlalchemy.engine.Engine [generated in 0.00127s] ('debug-state-thread',)
+2026-07-05 11:12:05,030 INFO sqlalchemy.engine.Engine ROLLBACK
+
+[1] INPUT
+Show interview calendar
+INFO:     127.0.0.1:58065 - "POST /api/chat/ HTTP/1.1" 200 OK
+2026-07-05 11:15:32,579 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-05 11:15:32,605 INFO sqlalchemy.engine.Engine SELECT 1
+2026-07-05 11:15:32,606 INFO sqlalchemy.engine.Engine [generated in 0.00333s] ()
+2026-07-05 11:15:33,267 INFO sqlalchemy.engine.Engine COMMIT
+INFO:     127.0.0.1:62845 - "OPTIONS /api/chat/ HTTP/1.1" 200 OK
+2026-07-05 11:15:53,354 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-05 11:15:53,359 INFO sqlalchemy.engine.Engine SELECT agent_state.id, agent_state.thread_id, agent_state.current_state 
+FROM agent_state 
+WHERE agent_state.thread_id = $1::VARCHAR
+2026-07-05 11:15:53,361 INFO sqlalchemy.engine.Engine [cached since 230.8s ago] ('hr-thread-1783230315243-12637',)
+2026-07-05 11:15:53,914 INFO sqlalchemy.engine.Engine SELECT conversation_memory.id, conversation_memory.thread_id, conversation_memory.messages 
+FROM conversation_memory 
+WHERE conversation_memory.thread_id = $1::VARCHAR
+2026-07-05 11:15:53,914 INFO sqlalchemy.engine.Engine [cached since 230.7s ago] ('hr-thread-1783230315243-12637',)
+2026-07-05 11:15:54,344 INFO sqlalchemy.engine.Engine ROLLBACK
+
+[1] INPUT
+HI
+INFO:     127.0.0.1:62845 - "POST /api/chat/ HTTP/1.1" 200 OK
+2026-07-05 11:16:21,999 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-05 11:16:22,001 INFO sqlalchemy.engine.Engine SELECT agent_state.id, agent_state.thread_id, agent_state.current_state 
+FROM agent_state 
+WHERE agent_state.thread_id = $1::VARCHAR
+2026-07-05 11:16:22,002 INFO sqlalchemy.engine.Engine [cached since 259.5s ago] ('hr-thread-1783230315243-12637',)
+2026-07-05 11:16:22,892 INFO sqlalchemy.engine.Engine SELECT conversation_memory.id, conversation_memory.thread_id, conversation_memory.messages 
+FROM conversation_memory 
+WHERE conversation_memory.thread_id = $1::VARCHAR
+2026-07-05 11:16:22,894 INFO sqlalchemy.engine.Engine [cached since 259.7s ago] ('hr-thread-1783230315243-12637',)
+2026-07-05 11:16:23,584 INFO sqlalchemy.engine.Engine ROLLBACK
+
+[1] INPUT
+Show all employees and HR records
+2026-07-05 11:16:32,637 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-05 11:16:32,655 INFO sqlalchemy.engine.Engine SELECT employees.id, employees.name, employees.email, employees.department, employees.position 
+FROM employees
+2026-07-05 11:16:32,656 INFO sqlalchemy.engine.Engine [generated in 0.00113s] ()
+2026-07-05 11:16:33,735 INFO sqlalchemy.engine.Engine ROLLBACK
+INFO:     127.0.0.1:62880 - "POST /api/chat/ HTTP/1.1" 200 OK
+2026-07-05 11:16:47,064 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-05 11:16:47,066 INFO sqlalchemy.engine.Engine SELECT agent_state.id, agent_state.thread_id, agent_state.current_state 
+FROM agent_state 
+WHERE agent_state.thread_id = $1::VARCHAR
+2026-07-05 11:16:47,066 INFO sqlalchemy.engine.Engine [cached since 284.6s ago] ('hr-thread-1783230315243-12637',)
+2026-07-05 11:16:47,880 INFO sqlalchemy.engine.Engine SELECT conversation_memory.id, conversation_memory.thread_id, conversation_memory.messages 
+FROM conversation_memory 
+WHERE conversation_memory.thread_id = $1::VARCHAR
+2026-07-05 11:16:47,881 INFO sqlalchemy.engine.Engine [cached since 284.6s ago] ('hr-thread-1783230315243-12637',)
+2026-07-05 11:16:48,325 INFO sqlalchemy.engine.Engine ROLLBACK
+
+[1] INPUT
+User requested action: view_employee. Payload: {"id":2,"name":"Michael Chang","email":"michael.c@example.com","department":"Product","position":"Product Manager","actions":[{"label":"View Profile","event":"view_employee","type":"primary"},{"label":"Update Details","event":"edit_employee","type":"default"},{"label":"Documents","event":"employee_documents","type":"default"}]}
+INFO:     127.0.0.1:55923 - "POST /api/chat/ HTTP/1.1" 200 OK
+2026-07-05 11:17:18,869 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-05 11:17:18,871 INFO sqlalchemy.engine.Engine SELECT agent_state.id, agent_state.thread_id, agent_state.current_state 
+FROM agent_state 
+WHERE agent_state.thread_id = $1::VARCHAR
+2026-07-05 11:17:18,872 INFO sqlalchemy.engine.Engine [cached since 316.4s ago] ('hr-thread-1783230315243-12637',)
+2026-07-05 11:17:19,460 INFO sqlalchemy.engine.Engine SELECT conversation_memory.id, conversation_memory.thread_id, conversation_memory.messages 
+FROM conversation_memory 
+WHERE conversation_memory.thread_id = $1::VARCHAR
+2026-07-05 11:17:19,461 INFO sqlalchemy.engine.Engine [cached since 316.2s ago] ('hr-thread-1783230315243-12637',)
+2026-07-05 11:17:19,903 INFO sqlalchemy.engine.Engine ROLLBACK
+
+[1] INPUT
+show tables
+INFO:     127.0.0.1:49497 - "POST /api/chat/ HTTP/1.1" 200 OK
+2026-07-05 11:17:44,911 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-05 11:17:44,913 INFO sqlalchemy.engine.Engine SELECT agent_state.id, agent_state.thread_id, agent_state.current_state 
+FROM agent_state 
+WHERE agent_state.thread_id = $1::VARCHAR
+2026-07-05 11:17:44,914 INFO sqlalchemy.engine.Engine [cached since 342.4s ago] ('hr-thread-1783230315243-12637',)
+2026-07-05 11:17:45,543 INFO sqlalchemy.engine.Engine SELECT conversation_memory.id, conversation_memory.thread_id, conversation_memory.messages 
+FROM conversation_memory 
+WHERE conversation_memory.thread_id = $1::VARCHAR
+2026-07-05 11:17:45,544 INFO sqlalchemy.engine.Engine [cached since 342.3s ago] ('hr-thread-1783230315243-12637',)
+2026-07-05 11:17:46,037 INFO sqlalchemy.engine.Engine ROLLBACK
+
+[1] INPUT
+Show all candidates
+2026-07-05 11:17:55,772 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-05 11:17:55,779 INFO sqlalchemy.engine.Engine SELECT candidates.id, candidates.name, candidates.email, candidates.phone, candidates.role, candidates.skills, candidates.experience, candidates.status, candidates.resume_url, candidates.created_at 
 FROM candidates 
  LIMIT $1::INTEGER OFFSET $2::INTEGER
-2026-07-04 22:09:18,528 INFO sqlalchemy.engine.Engine [generated in 0.00081s] (100, 0)
-2026-07-04 22:09:19,097 INFO sqlalchemy.engine.Engine ROLLBACK
-INFO:     127.0.0.1:57906 - "GET /api/ui-schema/candidates HTTP/1.1" 200 OK
-2026-07-04 22:09:20,014 INFO sqlalchemy.engine.Engine BEGIN (implicit)
-2026-07-04 22:09:20,015 INFO sqlalchemy.engine.Engine SELECT 1
-2026-07-04 22:09:20,016 INFO sqlalchemy.engine.Engine [cached since 12.59s ago] ()
-2026-07-04 22:09:20,420 INFO sqlalchemy.engine.Engine COMMIT
-INFO:     127.0.0.1:57905 - "GET /health HTTP/1.1" 200 OK
-2026-07-04 22:10:33,528 INFO sqlalchemy.engine.Engine BEGIN (implicit)
-2026-07-04 22:10:33,529 INFO sqlalchemy.engine.Engine SELECT candidates.id, candidates.name, candidates.email, candidates.phone, candidates.role, candidates.skills, candidates.experience, candidates.status, candidates.resume_url, candidates.created_at 
+2026-07-05 11:17:55,779 INFO sqlalchemy.engine.Engine [generated in 0.00078s] (200, 0)
+2026-07-05 11:17:56,524 INFO sqlalchemy.engine.Engine ROLLBACK
+INFO:     127.0.0.1:54006 - "POST /api/chat/ HTTP/1.1" 200 OK
+2026-07-05 11:18:05,646 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-05 11:18:05,647 INFO sqlalchemy.engine.Engine SELECT agent_state.id, agent_state.thread_id, agent_state.current_state 
+FROM agent_state 
+WHERE agent_state.thread_id = $1::VARCHAR
+2026-07-05 11:18:05,648 INFO sqlalchemy.engine.Engine [cached since 363.1s ago] ('hr-thread-1783230315243-12637',)
+2026-07-05 11:18:06,599 INFO sqlalchemy.engine.Engine SELECT conversation_memory.id, conversation_memory.thread_id, conversation_memory.messages 
+FROM conversation_memory 
+WHERE conversation_memory.thread_id = $1::VARCHAR
+2026-07-05 11:18:06,600 INFO sqlalchemy.engine.Engine [cached since 363.4s ago] ('hr-thread-1783230315243-12637',)
+2026-07-05 11:18:07,319 INFO sqlalchemy.engine.Engine ROLLBACK
+
+[1] INPUT
+User requested action: generate_offer. Payload: {"id":20,"name":"subhash","email":"subhas@gmail.com","phone":"82288282","role":"2s","experience":1,"status":"Active","actions":[{"label":"View Profile","event":"view_candidate","type":"primary"},{"label":"Schedule Interview","event":"schedule_interview","type":"default"},{"label":"Generate Offer","event":"generate_offer","type":"default"},{"label":"Convert Employee","event":"convert_employee","type":"default"},{"label":"Delete","event":"delete_candidate","type":"danger"}]}
+INFO:     127.0.0.1:55388 - "POST /api/chat/ HTTP/1.1" 200 OK
+2026-07-05 11:23:37,680 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-05 11:23:37,705 INFO sqlalchemy.engine.Engine SELECT agent_state.id, agent_state.thread_id, agent_state.current_state 
+FROM agent_state 
+WHERE agent_state.thread_id = $1::VARCHAR
+2026-07-05 11:23:37,708 INFO sqlalchemy.engine.Engine [cached since 695.2s ago] ('hr-thread-1783230315243-12637',)
+2026-07-05 11:23:38,812 INFO sqlalchemy.engine.Engine SELECT conversation_memory.id, conversation_memory.thread_id, conversation_memory.messages 
+FROM conversation_memory 
+WHERE conversation_memory.thread_id = $1::VARCHAR
+2026-07-05 11:23:38,812 INFO sqlalchemy.engine.Engine [cached since 695.6s ago] ('hr-thread-1783230315243-12637',)
+2026-07-05 11:23:39,342 INFO sqlalchemy.engine.Engine ROLLBACK
+
+[1] INPUT
+Show all candidates
+INFO:     127.0.0.1:60422 - "OPTIONS /api/chat/ HTTP/1.1" 200 OK
+2026-07-05 11:23:40,758 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-05 11:23:40,758 INFO sqlalchemy.engine.Engine SELECT agent_state.id, agent_state.thread_id, agent_state.current_state 
+FROM agent_state 
+WHERE agent_state.thread_id = $1::VARCHAR
+2026-07-05 11:23:40,759 INFO sqlalchemy.engine.Engine [cached since 698.2s ago] ('hr-thread-1783230034716-66702',)
+2026-07-05 11:23:41,775 INFO sqlalchemy.engine.Engine SELECT conversation_memory.id, conversation_memory.thread_id, conversation_memory.messages 
+FROM conversation_memory 
+WHERE conversation_memory.thread_id = $1::VARCHAR
+2026-07-05 11:23:41,777 INFO sqlalchemy.engine.Engine [cached since 698.5s ago] ('hr-thread-1783230034716-66702',)
+2026-07-05 11:23:42,238 INFO sqlalchemy.engine.Engine ROLLBACK
+
+[1] INPUT
+Show interview calendar
+2026-07-05 11:23:48,511 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-05 11:23:48,512 INFO sqlalchemy.engine.Engine SELECT candidates.id, candidates.name, candidates.email, candidates.phone, candidates.role, candidates.skills, candidates.experience, candidates.status, candidates.resume_url, candidates.created_at 
 FROM candidates 
  LIMIT $1::INTEGER OFFSET $2::INTEGER
-2026-07-04 22:10:33,529 INFO sqlalchemy.engine.Engine [cached since 75s ago] (100, 0)
-2026-07-04 22:10:34,368 INFO sqlalchemy.engine.Engine ROLLBACK
-INFO:     127.0.0.1:55570 - "GET /api/ui-schema/candidates HTTP/1.1" 200 OK
-2026-07-04 22:11:40,905 INFO sqlalchemy.engine.Engine BEGIN (implicit)
-2026-07-04 22:11:40,907 INFO sqlalchemy.engine.Engine SELECT candidates.id, candidates.name, candidates.email, candidates.phone, candidates.role, candidates.skills, candidates.experience, candidates.status, candidates.resume_url, candidates.created_at 
-FROM candidates 
- LIMIT $1::INTEGER OFFSET $2::INTEGER
-2026-07-04 22:11:40,907 INFO sqlalchemy.engine.Engine [cached since 142.4s ago] (100, 0)
-2026-07-04 22:11:42,446 INFO sqlalchemy.engine.Engine ROLLBACK
-INFO:     127.0.0.1:62787 - "GET /api/ui-schema/candidates HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53190 - "OPTIONS /api/chat/ HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53190 - "POST /api/chat/ HTTP/1.1" 200 OK
-INFO:     127.0.0.1:61350 - "POST /api/chat/ HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53665 - "POST /api/chat/ HTTP/1.1" 200 OK
-2026-07-04 22:18:34,556 INFO sqlalchemy.engine.Engine BEGIN (implicit)
-2026-07-04 22:18:34,564 INFO sqlalchemy.engine.Engine SELECT candidates.id, candidates.name, candidates.email, candidates.phone, candidates.role, candidates.skills, candidates.experience, candidates.status, candidates.resume_url, candidates.created_at 
-FROM candidates 
- LIMIT $1::INTEGER OFFSET $2::INTEGER
-2026-07-04 22:18:34,565 INFO sqlalchemy.engine.Engine [cached since 556s ago] (100, 0)
-2026-07-04 22:18:36,352 INFO sqlalchemy.engine.Engine ROLLBACK
-INFO:     127.0.0.1:59151 - "GET /api/ui-schema/candidates HTTP/1.1" 200 OK
-2026-07-04 22:18:55,473 INFO sqlalchemy.engine.Engine BEGIN (implicit)
-2026-07-04 22:18:55,475 INFO sqlalchemy.engine.Engine SELECT candidates.id, candidates.name, candidates.email, candidates.phone, candidates.role, candidates.skills, candidates.experience, candidates.status, candidates.resume_url, candidates.created_at 
-FROM candidates 
- LIMIT $1::INTEGER OFFSET $2::INTEGER
-2026-07-04 22:18:55,475 INFO sqlalchemy.engine.Engine [cached since 576.9s ago] (100, 0)
-2026-07-04 22:18:57,462 INFO sqlalchemy.engine.Engine ROLLBACK
-INFO:     127.0.0.1:60073 - "GET /api/ui-schema/candidates HTTP/1.1" 200 OK
-2026-07-04 22:20:06,540 INFO sqlalchemy.engine.Engine BEGIN (implicit)
-2026-07-04 22:20:06,542 INFO sqlalchemy.engine.Engine SELECT candidates.id, candidates.name, candidates.email, candidates.phone, candidates.role, candidates.skills, candidates.experience, candidates.status, candidates.resume_url, candidates.created_at 
-FROM candidates 
- LIMIT $1::INTEGER OFFSET $2::INTEGER
-2026-07-04 22:20:06,543 INFO sqlalchemy.engine.Engine [cached since 648s ago] (100, 0)
-2026-07-04 22:20:10,183 INFO sqlalchemy.engine.Engine ROLLBACK
-INFO:     127.0.0.1:54512 - "GET /api/ui-schema/candidates HTTP/1.1" 200 OK
-2026-07-04 22:20:30,206 INFO sqlalchemy.engine.Engine BEGIN (implicit)
-2026-07-04 22:20:30,208 INFO sqlalchemy.engine.Engine SELECT candidates.id, candidates.name, candidates.email, candidates.phone, candidates.role, candidates.skills, candidates.experience, candidates.status, candidates.resume_url, candidates.created_at 
-FROM candidates 
- LIMIT $1::INTEGER OFFSET $2::INTEGER
-2026-07-04 22:20:30,209 INFO sqlalchemy.engine.Engine [cached since 671.7s ago] (100, 0)
-2026-07-04 22:20:31,750 INFO sqlalchemy.engine.Engine ROLLBACK
-INFO:     127.0.0.1:61978 - "GET /api/ui-schema/candidates HTTP/1.1" 200 OK
-INFO:     127.0.0.1:49938 - "OPTIONS /api/candidates/4 HTTP/1.1" 200 OK
-2026-07-04 22:20:58,324 INFO sqlalchemy.engine.Engine BEGIN (implicit)
-2026-07-04 22:20:58,363 INFO sqlalchemy.engine.Engine SELECT candidates.id, candidates.name, candidates.email, candidates.phone, candidates.role, candidates.skills, candidates.experience, candidates.status, candidates.resume_url, candidates.created_at 
-FROM candidates 
-WHERE candidates.id = $1::INTEGER
-2026-07-04 22:20:58,363 INFO sqlalchemy.engine.Engine [generated in 0.00259s] (4,)
-2026-07-04 22:20:59,764 INFO sqlalchemy.engine.Engine SELECT interviews.id AS interviews_id, interviews.candidate_id AS interviews_candidate_id, interviews.scheduled_time AS interviews_scheduled_time, interviews.meeting_link AS interviews_meeting_link, interviews.status AS interviews_status 
-FROM interviews 
-WHERE $1::INTEGER = interviews.candidate_id
-2026-07-04 22:20:59,765 INFO sqlalchemy.engine.Engine [generated in 0.00160s] (4,)
-2026-07-04 22:21:00,438 INFO sqlalchemy.engine.Engine SELECT offer_letters.id AS offer_letters_id, offer_letters.candidate_id AS offer_letters_candidate_id, offer_letters.document_link AS offer_letters_document_link, offer_letters.status AS offer_letters_status 
-FROM offer_letters 
-WHERE $1::INTEGER = offer_letters.candidate_id
-2026-07-04 22:21:00,440 INFO sqlalchemy.engine.Engine [generated in 0.00182s] (4,)
-2026-07-04 22:21:01,772 INFO sqlalchemy.engine.Engine DELETE FROM candidates WHERE candidates.id = $1::INTEGER
-2026-07-04 22:21:01,773 INFO sqlalchemy.engine.Engine [generated in 0.00088s] (4,)
-2026-07-04 22:21:02,794 INFO sqlalchemy.engine.Engine COMMIT
-INFO:     127.0.0.1:49938 - "DELETE /api/candidates/4 HTTP/1.1" 200 OK
-2026-07-04 22:21:02,999 INFO sqlalchemy.engine.Engine BEGIN (implicit)
-2026-07-04 22:21:03,001 INFO sqlalchemy.engine.Engine SELECT candidates.id, candidates.name, candidates.email, candidates.phone, candidates.role, candidates.skills, candidates.experience, candidates.status, candidates.resume_url, candidates.created_at 
-FROM candidates 
- LIMIT $1::INTEGER OFFSET $2::INTEGER
-2026-07-04 22:21:03,002 INFO sqlalchemy.engine.Engine [cached since 704.5s ago] (100, 0)
-2026-07-04 22:21:04,832 INFO sqlalchemy.engine.Engine ROLLBACK
-INFO:     127.0.0.1:49938 - "GET /api/ui-schema/candidates HTTP/1.1" 200 OK
+2026-07-05 11:23:48,514 INFO sqlalchemy.engine.Engine [cached since 352.7s ago] (200, 0)
+2026-07-05 11:23:49,350 INFO sqlalchemy.engine.Engine ROLLBACK
+INFO:     127.0.0.1:58009 - "POST /api/chat/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60422 - "POST /api/chat/ HTTP/1.1" 200 OK
+2026-07-05 11:24:04,989 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-05 11:24:04,990 INFO sqlalchemy.engine.Engine SELECT agent_state.id, agent_state.thread_id, agent_state.current_state 
+FROM agent_state 
+WHERE agent_state.thread_id = $1::VARCHAR
+2026-07-05 11:24:04,990 INFO sqlalchemy.engine.Engine [cached since 722.5s ago] ('hr-thread-1783230315243-12637',)
+2026-07-05 11:24:06,019 INFO sqlalchemy.engine.Engine SELECT conversation_memory.id, conversation_memory.thread_id, conversation_memory.messages 
+FROM conversation_memory 
+WHERE conversation_memory.thread_id = $1::VARCHAR
+2026-07-05 11:24:06,020 INFO sqlalchemy.engine.Engine [cached since 722.8s ago] ('hr-thread-1783230315243-12637',)
+2026-07-05 11:24:06,863 INFO sqlalchemy.engine.Engine ROLLBACK
+
+[1] INPUT
+User requested action: generate_offer. Payload: {"id":20,"name":"subhash","email":"subhas@gmail.com","phone":"82288282","role":"2s","experience":1,"status":"Active","actions":[{"label":"View Profile","event":"view_candidate","type":"primary"},{"label":"Schedule Interview","event":"schedule_interview","type":"default"},{"label":"Generate Offer","event":"generate_offer","type":"default"},{"label":"Convert Employee","event":"convert_employee","type":"default"},{"label":"Delete","event":"delete_candidate","type":"danger"}]}
+INFO:     127.0.0.1:61424 - "POST /api/chat/ HTTP/1.1" 200 OK
+2026-07-05 11:24:32,593 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-05 11:24:32,594 INFO sqlalchemy.engine.Engine SELECT agent_state.id, agent_state.thread_id, agent_state.current_state 
+FROM agent_state 
+WHERE agent_state.thread_id = $1::VARCHAR
+2026-07-05 11:24:32,594 INFO sqlalchemy.engine.Engine [cached since 750.1s ago] ('hr-thread-1783230034716-66702',)
+2026-07-05 11:24:33,191 INFO sqlalchemy.engine.Engine SELECT conversation_memory.id, conversation_memory.thread_id, conversation_memory.messages 
+FROM conversation_memory 
+WHERE conversation_memory.thread_id = $1::VARCHAR
+2026-07-05 11:24:33,193 INFO sqlalchemy.engine.Engine [cached since 750s ago] ('hr-thread-1783230034716-66702',)
+2026-07-05 11:24:33,652 INFO sqlalchemy.engine.Engine ROLLBACK
+
+[1] INPUT
+create a meeting for prakaash at 5PM on july 20
+INFO:     127.0.0.1:62937 - "POST /api/chat/ HTTP/1.1" 200 OK
+2026-07-05 11:24:45,565 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-05 11:24:45,566 INFO sqlalchemy.engine.Engine SELECT agent_state.id, agent_state.thread_id, agent_state.current_state 
+FROM agent_state 
+WHERE agent_state.thread_id = $1::VARCHAR
+2026-07-05 11:24:45,567 INFO sqlalchemy.engine.Engine [cached since 763.1s ago] ('hr-thread-1783230315243-12637',)
+2026-07-05 11:24:46,458 INFO sqlalchemy.engine.Engine SELECT conversation_memory.id, conversation_memory.thread_id, conversation_memory.messages 
+FROM conversation_memory 
+WHERE conversation_memory.thread_id = $1::VARCHAR
+2026-07-05 11:24:46,459 INFO sqlalchemy.engine.Engine [cached since 763.2s ago] ('hr-thread-1783230315243-12637',)
+2026-07-05 11:24:46,987 INFO sqlalchemy.engine.Engine ROLLBACK
+
+[1] INPUT
+Show latest offers and documents
+2026-07-05 11:24:54,139 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-05 11:24:54,141 INFO sqlalchemy.engine.Engine SELECT agent_state.id, agent_state.thread_id, agent_state.current_state 
+FROM agent_state 
+WHERE agent_state.thread_id = $1::VARCHAR
+2026-07-05 11:24:54,141 INFO sqlalchemy.engine.Engine [cached since 771.6s ago] ('hr-thread-1783230315243-12637',)
+2026-07-05 11:24:54,910 INFO sqlalchemy.engine.Engine SELECT conversation_memory.id, conversation_memory.thread_id, conversation_memory.messages 
+FROM conversation_memory 
+WHERE conversation_memory.thread_id = $1::VARCHAR
+2026-07-05 11:24:54,913 INFO sqlalchemy.engine.Engine [cached since 771.7s ago] ('hr-thread-1783230315243-12637',)
+2026-07-05 11:24:55,394 INFO sqlalchemy.engine.Engine ROLLBACK
+
+[1] INPUT
+Show all employees
+INFO:     127.0.0.1:51655 - "POST /api/chat/ HTTP/1.1" 200 OK
+2026-07-05 11:24:57,020 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-05 11:24:57,021 INFO sqlalchemy.engine.Engine SELECT agent_state.id, agent_state.thread_id, agent_state.current_state 
+FROM agent_state 
+WHERE agent_state.thread_id = $1::VARCHAR
+2026-07-05 11:24:57,021 INFO sqlalchemy.engine.Engine [cached since 774.5s ago] ('hr-thread-1783230315243-12637',)
+2026-07-05 11:24:58,770 INFO sqlalchemy.engine.Engine SELECT conversation_memory.id, conversation_memory.thread_id, conversation_memory.messages 
+FROM conversation_memory 
+WHERE conversation_memory.thread_id = $1::VARCHAR
+2026-07-05 11:24:58,771 INFO sqlalchemy.engine.Engine [cached since 775.5s ago] ('hr-thread-1783230315243-12637',)
+2026-07-05 11:24:59,726 INFO sqlalchemy.engine.Engine ROLLBACK
+
+[1] INPUT
+Show all employees
+2026-07-05 11:25:04,267 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-05 11:25:04,269 INFO sqlalchemy.engine.Engine SELECT employees.id, employees.name, employees.email, employees.department, employees.position 
+FROM employees
+2026-07-05 11:25:04,270 INFO sqlalchemy.engine.Engine [cached since 511.6s ago] ()
+2026-07-05 11:25:05,021 INFO sqlalchemy.engine.Engine ROLLBACK
+INFO:     127.0.0.1:53482 - "POST /api/chat/ HTTP/1.1" 200 OK
+2026-07-05 11:25:07,482 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-05 11:25:07,484 INFO sqlalchemy.engine.Engine SELECT agent_state.id, agent_state.thread_id, agent_state.current_state 
+FROM agent_state 
+WHERE agent_state.thread_id = $1::VARCHAR
+2026-07-05 11:25:07,485 INFO sqlalchemy.engine.Engine [cached since 785s ago] ('hr-thread-1783230315243-12637',)
+2026-07-05 11:25:08,288 INFO sqlalchemy.engine.Engine SELECT conversation_memory.id, conversation_memory.thread_id, conversation_memory.messages 
+FROM conversation_memory 
+WHERE conversation_memory.thread_id = $1::VARCHAR
+2026-07-05 11:25:08,288 INFO sqlalchemy.engine.Engine [cached since 785.1s ago] ('hr-thread-1783230315243-12637',)
+2026-07-05 11:25:08,800 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-05 11:25:08,801 INFO sqlalchemy.engine.Engine SELECT employees.id, employees.name, employees.email, employees.department, employees.position 
+FROM employees
+2026-07-05 11:25:08,801 INFO sqlalchemy.engine.Engine [cached since 516.1s ago] ()
+2026-07-05 11:25:08,860 INFO sqlalchemy.engine.Engine ROLLBACK
+
+[1] INPUT
+Show latest offers and documents
+2026-07-05 11:25:09,528 INFO sqlalchemy.engine.Engine ROLLBACK
+INFO:     127.0.0.1:51655 - "POST /api/chat/ HTTP/1.1" 200 OK
+2026-07-05 11:25:14,893 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-07-05 11:25:14,895 INFO sqlalchemy.engine.Engine SELECT agent_state.id, agent_state.thread_id, agent_state.current_state 
+FROM agent_state 
+WHERE agent_state.thread_id = $1::VARCHAR
+2026-07-05 11:25:14,895 INFO sqlalchemy.engine.Engine [cached since 792.4s ago] ('hr-thread-1783230315243-12637',)
+2026-07-05 11:25:15,721 INFO sqlalchemy.engine.Engine SELECT conversation_memory.id, conversation_memory.thread_id, conversation_memory.messages 
+FROM conversation_memory 
+WHERE conversation_memory.thread_id = $1::VARCHAR
+2026-07-05 11:25:15,723 INFO sqlalchemy.engine.Engine [cached since 792.5s ago] ('hr-thread-1783230315243-12637',)
+2026-07-05 11:25:16,281 INFO sqlalchemy.engine.Engine ROLLBACK
+
+[1] INPUT
+User requested action: employee_documents. Payload: {"id":1,"name":"Sarah Jenkins","email":"sarah.j@example.com","department":"Engineering","position":"Senior Frontend Engineer","actions":[{"label":"View Profile","event":"view_employee","type":"primary"},{"label":"Update Details","event":"edit_employee","type":"default"},{"label":"Documents","event":"employee_documents","type":"default"}]}
+INFO:     127.0.0.1:51078 - "POST /api/chat/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49652 - "POST /api/chat/ HTTP/1.1" 200 OK

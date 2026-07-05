@@ -1,8 +1,9 @@
 from typing import Any, Dict
 import os
+import json
+from pathlib import Path
 import datetime
 from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 
@@ -23,66 +24,107 @@ def get_credentials():
     return creds
 
 
-MOCK_EVENTS = [
+MOCK_EVENTS_FILE = Path(__file__).resolve().parents[3] / "mock_calendar_events.json"
+DEFAULT_MOCK_EVENTS = [
     {
         "id": "mock-event-1",
         "title": "Interview: John Doe",
         "start": datetime.datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
         "end": (datetime.datetime.utcnow() + datetime.timedelta(hours=1)).replace(microsecond=0).isoformat() + "Z",
         "description": "Mock interview",
-        "meeting_link": "https://meet.google.com/mock"
+        "meeting_link": "https://meet.google.com/mock",
     }
 ]
+
+
+def _load_mock_events():
+    if MOCK_EVENTS_FILE.exists():
+        try:
+            data = json.loads(MOCK_EVENTS_FILE.read_text(encoding="utf-8"))
+            if isinstance(data, list):
+                return data
+        except Exception:
+            pass
+    return [dict(event) for event in DEFAULT_MOCK_EVENTS]
+
+
+def _save_mock_events(events):
+    try:
+        MOCK_EVENTS_FILE.write_text(json.dumps(events, ensure_ascii=True, indent=2), encoding="utf-8")
+    except Exception:
+        # Don't block API execution if file persistence fails.
+        pass
+
 
 async def execute_calendar(action: str, payload: Dict[str, Any]) -> Dict[str, Any]:
     """
     Real Google Calendar MCP Server using OAuth.
+    Falls back to persisted local mock events when OAuth credentials are unavailable.
     """
     try:
-        global MOCK_EVENTS
         creds = get_credentials()
         if not creds:
-            # Mock behavior if credentials don't exist
-            if action == "get_events" or action == "list_events":
+            events = _load_mock_events()
+
+            if action in ["get_events", "list_events"]:
                 return {
                     "status": "success",
-                    "message": f"Retrieved {len(MOCK_EVENTS)} mock events",
-                    "data": MOCK_EVENTS,
-                    "events": MOCK_EVENTS # For list_events compatibility
+                    "message": f"Retrieved {len(events)} mock events",
+                    "data": events,
+                    "events": events,
                 }
-            elif action == "create_event":
+
+            if action == "create_event":
                 new_event = {
-                    "id": f"mock-event-{len(MOCK_EVENTS) + 1}",
+                    "id": f"mock-event-{len(events) + 1}",
                     "title": payload.get("title", "New Mock Event"),
                     "start": payload.get("start_time", datetime.datetime.utcnow().replace(microsecond=0).isoformat() + "Z"),
                     "description": payload.get("description", ""),
-                    "meeting_link": "https://meet.google.com/mock-new"
+                    "meeting_link": "https://meet.google.com/mock-new",
                 }
-                # Approximate end time for UI
                 try:
                     start_dt = datetime.datetime.fromisoformat(new_event["start"].replace("Z", "+00:00"))
                     new_event["end"] = (start_dt + datetime.timedelta(hours=1)).isoformat().replace("+00:00", "Z")
-                except:
+                except Exception:
                     pass
-                MOCK_EVENTS.append(new_event)
+
+                events.append(new_event)
+                _save_mock_events(events)
                 return {"status": "success", "message": "Mock event created", "data": {"event_id": new_event["id"]}}
-            elif action == "update_event":
+
+            if action == "update_event":
                 event_id = payload.get("event_id")
-                for evt in MOCK_EVENTS:
-                    if evt["id"] == event_id:
-                        if payload.get("title"): evt["title"] = payload["title"]
-                        if payload.get("start_time"): 
+                updated = False
+
+                for evt in events:
+                    if evt.get("id") == event_id:
+                        if payload.get("title"):
+                            evt["title"] = payload["title"]
+                        if payload.get("start_time"):
                             evt["start"] = payload["start_time"]
                             try:
                                 start_dt = datetime.datetime.fromisoformat(evt["start"].replace("Z", "+00:00"))
                                 evt["end"] = (start_dt + datetime.timedelta(hours=1)).isoformat().replace("+00:00", "Z")
-                            except: pass
+                            except Exception:
+                                pass
+                        updated = True
+                        break
+
+                if not updated:
+                    return {"status": "error", "message": "Mock event not found"}
+
+                _save_mock_events(events)
                 return {"status": "success", "message": "Mock event updated"}
-            elif action == "cancel_event":
+
+            if action == "cancel_event":
                 event_id = payload.get("event_id")
-                MOCK_EVENTS = [evt for evt in MOCK_EVENTS if evt["id"] != event_id]
+                filtered = [evt for evt in events if evt.get("id") != event_id]
+                if len(filtered) == len(events):
+                    return {"status": "error", "message": "Mock event not found"}
+
+                _save_mock_events(filtered)
                 return {"status": "success", "message": "Mock event cancelled"}
-            
+
         service = build("calendar", "v3", credentials=creds)
 
         if action == "get_events":
@@ -92,27 +134,29 @@ async def execute_calendar(action: str, payload: Dict[str, Any]) -> Dict[str, An
                 timeMin=now,
                 maxResults=20,
                 singleEvents=True,
-                orderBy="startTime"
+                orderBy="startTime",
             ).execute()
-            
+
             raw_events = events_result.get("items", [])
             formatted_events = []
             for item in raw_events:
                 start = item.get("start", {}).get("dateTime", item.get("start", {}).get("date"))
                 end = item.get("end", {}).get("dateTime", item.get("end", {}).get("date"))
-                formatted_events.append({
-                    "id": item.get("id"),
-                    "title": item.get("summary", "Untitled Event"),
-                    "start": start,
-                    "end": end,
-                    "description": item.get("description", ""),
-                    "meeting_link": item.get("hangoutLink", "")
-                })
-                
+                formatted_events.append(
+                    {
+                        "id": item.get("id"),
+                        "title": item.get("summary", "Untitled Event"),
+                        "start": start,
+                        "end": end,
+                        "description": item.get("description", ""),
+                        "meeting_link": item.get("hangoutLink", ""),
+                    }
+                )
+
             return {
                 "status": "success",
                 "message": f"Retrieved {len(formatted_events)} events",
-                "data": formatted_events
+                "data": formatted_events,
             }
 
         if action == "create_event":
@@ -170,6 +214,7 @@ async def execute_calendar(action: str, payload: Dict[str, Any]) -> Dict[str, An
                 return {"status": "error", "message": "event_id is required for cancel_event"}
             service.events().delete(calendarId="primary", eventId=event_id).execute()
             return {"status": "success", "message": "Event cancelled successfully", "data": {"event_id": event_id}}
+
         if action == "list_events":
             start_date = payload.get("start_date")
             end_date = payload.get("end_date")
@@ -179,7 +224,7 @@ async def execute_calendar(action: str, payload: Dict[str, Any]) -> Dict[str, An
                 "calendarId": "primary",
                 "maxResults": 100,
                 "singleEvents": True,
-                "orderBy": "startTime"
+                "orderBy": "startTime",
             }
             if start_date:
                 kwargs["timeMin"] = start_date if ("Z" in start_date or "+" in start_date) else start_date + "T00:00:00Z"
@@ -202,9 +247,9 @@ async def execute_calendar(action: str, payload: Dict[str, Any]) -> Dict[str, An
                 candidate = ""
                 summary_lower = summary.lower()
                 if "interview with " in summary_lower:
-                    candidate = summary[summary_lower.find("interview with ") + 15:].strip()
+                    candidate = summary[summary_lower.find("interview with ") + 15 :].strip()
                 elif " interview" in summary_lower:
-                    candidate = summary[:summary_lower.find(" interview")].strip()
+                    candidate = summary[: summary_lower.find(" interview")].strip()
                 else:
                     for att in attendees:
                         if "example.com" not in att and "praje" not in att:
@@ -218,43 +263,43 @@ async def execute_calendar(action: str, payload: Dict[str, Any]) -> Dict[str, An
                     if candidate_name not in text_to_search:
                         continue
 
-                normalized_events.append({
-                    "id": item.get("id"),
-                    "title": summary,
-                    "candidate": candidate,
-                    "start_time": item.get("start", {}).get("dateTime") or item.get("start", {}).get("date"),
-                    "end_time": item.get("end", {}).get("dateTime") or item.get("end", {}).get("date"),
-                    "meeting_link": item.get("hangoutLink", ""),
-                    "attendees": attendees
-                })
+                normalized_events.append(
+                    {
+                        "id": item.get("id"),
+                        "title": summary,
+                        "candidate": candidate,
+                        "start_time": item.get("start", {}).get("dateTime") or item.get("start", {}).get("date"),
+                        "end_time": item.get("end", {}).get("dateTime") or item.get("end", {}).get("date"),
+                        "meeting_link": item.get("hangoutLink", ""),
+                        "attendees": attendees,
+                    }
+                )
 
             return {
                 "status": "success",
-                "events": normalized_events
+                "events": normalized_events,
             }
 
         if action == "get_dashboard_metrics":
-            # For hackathon purposes, fetch upcoming events and count
             now = datetime.datetime.utcnow().isoformat() + "Z"
             events_result = service.events().list(
                 calendarId="primary",
                 timeMin=now,
                 maxResults=100,
                 singleEvents=True,
-                orderBy="startTime"
+                orderBy="startTime",
             ).execute()
             events = events_result.get("items", [])
-            
+
             upcoming_interviews_count = len(events)
             next_interview = events[0].get("summary") if events else "None scheduled"
             next_interview_time = events[0].get("start", {}).get("dateTime") if events else None
-            
-            # Format time if exists
+
             if next_interview_time:
                 try:
                     dt = datetime.datetime.fromisoformat(next_interview_time.replace("Z", "+00:00"))
                     next_interview_time = dt.strftime("%b %d, %I:%M %p")
-                except:
+                except Exception:
                     pass
 
             return {
@@ -263,9 +308,9 @@ async def execute_calendar(action: str, payload: Dict[str, Any]) -> Dict[str, An
                     "calendar": {
                         "upcoming_interviews_count": upcoming_interviews_count,
                         "next_interview": next_interview,
-                        "next_interview_time": next_interview_time
+                        "next_interview_time": next_interview_time,
                     }
-                }
+                },
             }
 
         return {"status": "error", "message": f"Unknown action: {action}"}

@@ -3,7 +3,7 @@ import json
 import datetime
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, AIMessage
 from sqlalchemy import select
 
 from app.agent.graph import hr_agent_app
@@ -20,6 +20,95 @@ class ChatRequest(BaseModel):
     thread_id: str = "default_thread"
 
 
+_STATE_KEYS = [
+    "selected_candidate",
+    "current_workflow",
+    "last_ui",
+    "visible_context",
+]
+
+
+def _message_to_dict(message):
+    if isinstance(message, HumanMessage):
+        return {"type": "human", "content": message.content}
+    if isinstance(message, AIMessage):
+        return {"type": "ai", "content": message.content}
+    return {"type": "unknown", "content": str(getattr(message, "content", ""))}
+
+
+def _dict_to_message(item):
+    if not isinstance(item, dict):
+        return None
+    content = item.get("content", "")
+    msg_type = item.get("type")
+    if msg_type == "human":
+        return HumanMessage(content=content)
+    if msg_type == "ai":
+        return AIMessage(content=content)
+    return None
+
+
+async def _load_conversation_history(db, thread_id: str):
+    stmt = select(models.ConversationMemory).where(models.ConversationMemory.thread_id == thread_id)
+    result = await db.execute(stmt)
+    row = result.scalars().first()
+    if not row or not row.messages:
+        return []
+    try:
+        raw = json.loads(row.messages)
+    except Exception:
+        return []
+    if not isinstance(raw, list):
+        return []
+    messages = []
+    for item in raw:
+        msg = _dict_to_message(item)
+        if msg is not None:
+            messages.append(msg)
+    return messages
+
+
+async def _save_conversation_history(db, thread_id: str, messages):
+    compact = [_message_to_dict(m) for m in messages][-20:]
+    payload = json.dumps(compact, ensure_ascii=True)
+
+    stmt = select(models.ConversationMemory).where(models.ConversationMemory.thread_id == thread_id)
+    result = await db.execute(stmt)
+    row = result.scalars().first()
+    if row:
+        row.messages = payload
+    else:
+        row = models.ConversationMemory(thread_id=thread_id, messages=payload)
+        db.add(row)
+    await db.commit()
+
+
+async def _load_agent_state(db, thread_id: str):
+    stmt = select(models.AgentState).where(models.AgentState.thread_id == thread_id)
+    result = await db.execute(stmt)
+    row = result.scalars().first()
+    if not row or not row.current_state:
+        return {}
+    try:
+        data = json.loads(row.current_state)
+    except Exception:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+async def _save_agent_state(db, thread_id: str, state: dict):
+    persisted = {k: state.get(k) for k in _STATE_KEYS if state.get(k) is not None}
+    payload = json.dumps(persisted, ensure_ascii=True)
+
+    stmt = select(models.AgentState).where(models.AgentState.thread_id == thread_id)
+    result = await db.execute(stmt)
+    row = result.scalars().first()
+    if row:
+        row.current_state = payload
+    else:
+        row = models.AgentState(thread_id=thread_id, current_state=payload)
+        db.add(row)
+    await db.commit()
 async def _build_candidates_table_ui():
     async with AsyncSessionLocal() as db:
         candidates = await candidate_repo.get_candidates(db, skip=0, limit=200)
@@ -324,7 +413,15 @@ async def _fallback_chat(message: str):
 async def chat_endpoint(request: ChatRequest):
     try:
         config = {"configurable": {"thread_id": request.thread_id}}
-        initial_state = {"messages": [HumanMessage(content=request.message)]}
+
+        async with AsyncSessionLocal() as db:
+            persisted_state = await _load_agent_state(db, request.thread_id)
+            conversation_history = await _load_conversation_history(db, request.thread_id)
+
+        # Rehydrate persisted conversation and state before processing the new turn.
+        initial_messages = [*conversation_history, HumanMessage(content=request.message)]
+        initial_state = {"messages": initial_messages, **persisted_state}
+
         result = await hr_agent_app.ainvoke(initial_state, config)
 
         messages = result.get("messages", [])
@@ -340,6 +437,11 @@ async def chat_endpoint(request: ChatRequest):
             "mcp_results": result.get("mcp_results", []),
             "agent_trace_log": result.get("agent_trace_log", "")
         }
+
+        updated_history = [*conversation_history, HumanMessage(content=request.message), AIMessage(content=response_text)]
+        async with AsyncSessionLocal() as db:
+            await _save_agent_state(db, request.thread_id, result)
+            await _save_conversation_history(db, request.thread_id, updated_history)
 
         return {
             "response": response_text,
@@ -362,3 +464,4 @@ async def chat_endpoint(request: ChatRequest):
             return fallback_res
 
         raise HTTPException(status_code=500, detail=detail)
+

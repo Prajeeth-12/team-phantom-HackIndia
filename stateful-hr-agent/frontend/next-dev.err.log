@@ -1,16 +1,28 @@
-node:events:502
-      throw er; // Unhandled 'error' event
-      ^
+ ⨯ ./src/app/page.tsx
+Error:   [31mx[0m Return statement is not allowed here
+   ,-[[36;1;4mC:\Users\praje\Downloads\hackindia-track4\stateful-hr-agent\frontend\src\app\page.tsx[0m:2:1]
+ [2m1[0m |     for (const base of API_BASES) {
+ [2m2[0m |       try { return await fetch(`${base}${path}`, init); }
+   : [35;1m            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+ [2m3[0m |       catch (err) { lastError = err; }
+ [2m4[0m |     }
+ [2m4[0m |     if (i < retries) await new Promise((r) => setTimeout(r, 250 * (i + 1)));
+   `----
+  [31mx[0m Expression expected
+   ,-[[36;1;4mC:\Users\praje\Downloads\hackindia-track4\stateful-hr-agent\frontend\src\app\page.tsx[0m:6:1]
+ [2m3[0m |       catch (err) { lastError = err; }
+ [2m4[0m |     }
+ [2m5[0m |     if (i < retries) await new Promise((r) => setTimeout(r, 250 * (i + 1)));
+ [2m6[0m |   }
+   : [35;1m  ^[0m
+ [2m7[0m |   throw lastError || new Error('Failed to fetch backend API');
+ [2m8[0m | }
+ [2m8[0m | 
+   `----
 
-Error: EPERM: operation not permitted, open 'C:\Users\praje\Downloads\hackindia-track4\stateful-hr-agent\frontend\.next\trace'
-Emitted 'error' event on WriteStream instance at:
-    at emitErrorNT (node:internal/streams/destroy:169:8)
-    at emitErrorCloseNT (node:internal/streams/destroy:128:3)
-    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
-  errno: -4048,
-  code: 'EPERM',
-  syscall: 'open',
-  path: 'C:\\Users\\praje\\Downloads\\hackindia-track4\\stateful-hr-agent\\frontend\\.next\\trace'
-}
+Caused by:
+    Syntax Error
 
-Node.js v20.19.3
+Import trace for requested module:
+./src/app/page.tsx
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename 'C:\Users\praje\Downloads\hackindia-track4\stateful-hr-agent\frontend\.next\cache\webpack\client-development-fallback\0.pack.gz_' -> 'C:\Users\praje\Downloads\hackindia-track4\stateful-hr-agent\frontend\.next\cache\webpack\client-development-fallback\0.pack.gz'
