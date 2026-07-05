@@ -95,7 +95,7 @@ Rules for generation based on Context:
   ],
   "actions": ["Refresh"]
 }}
-7. If the action is fetching calendar events (e.g., get_events) and mcp_results contains success, output:
+7. IN-PLACE CALENDAR REFRESH PRIORITY: If the action is fetching calendar events (e.g., get_events) or if `get_events` is anywhere in `mcp_results` with success, YOU MUST PRIORITIZE THIS and output the calendar layout. Ignore rule 2. Output:
 {{
   "type": "calendar",
   "title": "Upcoming Events",

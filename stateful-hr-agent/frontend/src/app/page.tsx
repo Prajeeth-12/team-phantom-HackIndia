@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { DynamicRenderer, UIConfig } from '../components/ag-ui/DynamicRenderer';
 import { Loader2, Zap, ChevronRight, ChevronDown, Terminal, Send, Database, Calendar, Mail, FileText, Users } from 'lucide-react';
 
-const API_BASES = ['http://127.0.0.1:8000', 'http://localhost:8000'];
+const API_BASES = ['http://127.0.0.1:8001', 'http://localhost:8001', 'http://127.0.0.1:8000', 'http://localhost:8000'];
 
 type Toast = { id: number; kind: 'success' | 'error'; message: string; };
 type TraceItem = { 
@@ -166,6 +166,10 @@ export default function Home() {
     
     if (event === 'read_candidates') {
       await sendAgentCommand('Show all candidates', event);
+      return;
+    }
+    if (event === 'read_employees') {
+      await sendAgentCommand('Show all employees', event);
       return;
     }
     if (event === 'create_candidate') {

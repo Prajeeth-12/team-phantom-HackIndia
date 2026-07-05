@@ -1,4 +1,4 @@
-import json
+﻿import json
 import os
 import re
 from langchain_core.messages import AIMessage
@@ -53,9 +53,10 @@ ACTION_MAP = {
     "modify_candidate": "update_candidate",
     "database_update": "update_candidate",
     "edit_candidate": "update_candidate",
-    "get_records": "get_candidates",
     "list_candidates": "get_candidates",
     "view_candidates": "get_candidates",
+    "list_employees": "get_employees",
+    "view_employees": "get_employees",
     "remove_candidate": "delete_candidate",
     "schedule_interview": "create_event", # will map to create_interview
     "book_meeting": "create_event",
@@ -154,8 +155,9 @@ async def planning_node(state: AgentState) -> AgentState:
         plan = json.loads(raw_json)
         if not isinstance(plan, list):
             plan = []
-        plan = enforce_plan_guardrails(intent, entities, plan)
-        print(f"\n[3] PLAN\n{json.dumps(plan, indent=1)}")
+        if "employee" in intent.lower() and any(verb in intent.lower() for verb in ["list", "show", "get", "view", "all"]):
+            plan = [{"step": 1, "tool": "postgres_mcp", "action": "get_employees", "parameters": {}}]
+        plan = enforce_plan_guardrails(intent, entities, plan)        print(f"\n[3] PLAN\n{json.dumps(plan, indent=1)}")
         return {"plan": plan}
     except Exception as e:
         print(f"\n[3] PLAN\nFAILED: {e}")
@@ -181,7 +183,7 @@ async def mcp_execution(state: AgentState) -> AgentState:
     
     results = []
     context = {}
-    trace_log = f"🧠 GPT-5.1\nIntent: {state.get('intent', 'unknown')}\n\n"
+    trace_log = f"ðŸ§  GPT-5.1\nIntent: {state.get('intent', 'unknown')}\n\n"
     
     for step in plan:
         tool_raw = step.get("tool", "")
@@ -193,6 +195,11 @@ async def mcp_execution(state: AgentState) -> AgentState:
         action = ACTION_MAP.get(raw_action, raw_action)
         
         # fix invalid actions mapped by GPT
+        if action in ["get_records", "get_candidates"] and "employee" in intent.lower():
+            action = "get_employees"
+        elif action == "get_records":
+            action = "get_candidates"
+                
         if server == "calendar" and action in ["create_interview", "schedule_interview"]:
             action = "create_event"
         if server == "calendar" and action in ["list_interviews", "view_calendar", "show_calendar", "fetch_events", "view_interview_calendar"]:
@@ -222,7 +229,7 @@ async def mcp_execution(state: AgentState) -> AgentState:
                         break
                 if found:
                     print(f"Found:\n{{\n id: {found.get('id')}\n name: {found.get('name')}\n email: {found.get('email')}\n}}")
-                    trace_log += f"🔍 Database MCP\nFound {found.get('name')}\n\n"
+                    trace_log += f"ðŸ” Database MCP\nFound {found.get('name')}\n\n"
                     context["candidate_id"] = found["id"]
                     context["candidate_email"] = found.get("email")
                     context["candidate_name"] = found.get("name")
@@ -260,29 +267,34 @@ async def mcp_execution(state: AgentState) -> AgentState:
         try:
             result = await mcp_client.execute(server, action, payload)
             
-            if action == "get_candidates" and result.get("status") == "success":
+            if action in ["get_candidates", "get_employees"] and result.get("status") == "success":
                 data = result.get("data", [])
                 if data and isinstance(data, list):
                     visible_context = data
                     if len(data) == 1:
-                        context["candidate_id"] = data[0].get("id")
-                        context["candidate_email"] = data[0].get("email")
-                        context["candidate_name"] = data[0].get("name")
-                        trace_log += f"🔍 Database MCP\nFound {data[0].get('name')}\n\n"
+                        if action == "get_candidates":
+                            context["candidate_id"] = data[0].get("id")
+                            context["candidate_email"] = data[0].get("email")
+                            context["candidate_name"] = data[0].get("name")
+                        else:
+                            context["employee_id"] = data[0].get("id")
+                            context["employee_email"] = data[0].get("email")
+                            context["employee_name"] = data[0].get("name")
+                        trace_log += f"ðŸ” Database MCP\nFound {data[0].get('name')}\n\n"
                         
             if server == "calendar" and result.get("status") == "success":
                 if action == "get_events":
-                    trace_log += f"📅 Calendar MCP\nRetrieved events\n\n"
+                    trace_log += f"ðŸ“… Calendar MCP\nRetrieved events\n\n"
                 elif action == "cancel_event":
-                    trace_log += f"📅 Calendar MCP\nEvent cancelled\n\n"
+                    trace_log += f"ðŸ“… Calendar MCP\nEvent cancelled\n\n"
                 else:
-                    trace_log += f"📅 Calendar MCP\nEvent scheduled/updated\n\n"
+                    trace_log += f"ðŸ“… Calendar MCP\nEvent scheduled/updated\n\n"
             if server == "docs" and result.get("status") == "success":
-                trace_log += f"📄 Docs MCP\nOffer created\n\n"
+                trace_log += f"ðŸ“„ Docs MCP\nOffer created\n\n"
             if server == "gmail" and result.get("status") == "success":
-                trace_log += f"📧 Gmail MCP\nEmail sent\n\n"
+                trace_log += f"ðŸ“§ Gmail MCP\nEmail sent\n\n"
             if server == "postgres" and action in ["convert_to_employee", "update_candidate", "delete_candidate", "create_candidate"] and result.get("status") == "success":
-                trace_log += f"💾 Postgres MCP\nDatabase updated successfully\n\n"
+                trace_log += f"ðŸ’¾ Postgres MCP\nDatabase updated successfully\n\n"
                     
         except Exception as e:
             result = {"status": "error", "message": str(e)}
@@ -297,7 +309,7 @@ async def mcp_execution(state: AgentState) -> AgentState:
             "result": result
         })
         
-    trace_log += "✅ Complete"
+    trace_log += "âœ… Complete"
     print("\n===================================\n")
         
     return {
@@ -342,3 +354,4 @@ Summary:"""
         summary = f"Workflow completed successfully for {selected_candidate}."
         
     return {"messages": [AIMessage(content=summary)]}
+
