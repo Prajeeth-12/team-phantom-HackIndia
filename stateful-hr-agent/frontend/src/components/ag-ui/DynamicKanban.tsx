@@ -1,5 +1,5 @@
 import React from 'react';
-import { MoreHorizontal, Plus, Mail, Phone, Calendar, CheckCircle2, Clock } from 'lucide-react';
+import { MoreHorizontal, Plus, Mail, Phone, Calendar, CheckCircle2, Clock, Trash2 } from 'lucide-react';
 
 interface KanbanProps {
   title?: string;
@@ -62,12 +62,20 @@ export const DynamicKanban: React.FC<KanbanProps> = ({ title = "Candidate Pipeli
                         <h4 className="text-[14px] font-medium text-black leading-tight group-hover:text-blue-600 transition-colors">
                           {item.name}
                         </h4>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); onAction('edit_candidate', { id: item.id }); }}
-                          className="text-[#a3a3a3] hover:text-black opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <MoreHorizontal className="w-4 h-4" />
-                        </button>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); onAction('edit_candidate', { id: item.id }); }}
+                            className="p-1 text-[#a3a3a3] hover:text-black transition-colors rounded"
+                          >
+                            <MoreHorizontal className="w-4 h-4" />
+                          </button>
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); onAction('delete_candidate', { id: item.id }); }}
+                            className="p-1 text-[#a3a3a3] hover:text-red-500 transition-colors rounded"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                       
                       {item.role && (

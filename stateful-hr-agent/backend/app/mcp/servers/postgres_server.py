@@ -165,10 +165,10 @@ async def execute_postgres(action: str, payload: Dict[str, Any]) -> Dict[str, An
             }
 
         if action == "delete_candidate":
-            candidate_id = payload.get("id")
+            candidate_id = payload.get("id") or payload.get("candidate_id")
             if not candidate_id:
                 return {"status": "error", "message": "candidate id required"}
-            db_candidate = await candidate_repo.delete_candidate(db, candidate_id)
+            db_candidate = await candidate_repo.delete_candidate(db, int(candidate_id))
             if db_candidate:
                 return {"status": "success", "message": "Candidate deleted"}
             return {"status": "error", "message": "candidate not found"}
