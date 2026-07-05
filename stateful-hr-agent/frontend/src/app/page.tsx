@@ -213,6 +213,11 @@ export default function Home() {
         return;
     }
     
+    if (event === 'workflow') {
+        await sendAgentCommand(pl?.message, event);
+        return;
+    }
+    
     await sendAgentCommand(`User requested action: ${event}. Payload: ${JSON.stringify(pl)}`, event);
   };
 

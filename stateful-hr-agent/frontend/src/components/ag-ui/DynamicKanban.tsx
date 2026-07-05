@@ -93,17 +93,17 @@ export const DynamicKanban: React.FC<KanbanProps> = ({ title = "Candidate Pipeli
                       
                       <div className="mt-3 pt-3 border-t border-[#f0f0f0] flex gap-2">
                         {col.id.toLowerCase() === 'applied' && (
-                          <button onClick={(e) => { e.stopPropagation(); onAction('update_candidate', { id: item.id, status: 'interviewing' }); }} className="flex-1 py-1.5 bg-blue-50 text-blue-600 rounded text-[10px] font-semibold hover:bg-blue-100 transition-colors flex items-center justify-center gap-1">
+                          <button onClick={(e) => { e.stopPropagation(); onAction('workflow', { message: `Schedule an interview for ${item.name} and update their status to interviewing` }); }} className="flex-1 py-1.5 bg-blue-50 text-blue-600 rounded text-[10px] font-semibold hover:bg-blue-100 transition-colors flex items-center justify-center gap-1">
                             <Calendar className="w-3 h-3" /> Interview
                           </button>
                         )}
                         {col.id.toLowerCase() === 'interviewing' && (
-                          <button onClick={(e) => { e.stopPropagation(); onAction('update_candidate', { id: item.id, status: 'selected' }); }} className="flex-1 py-1.5 bg-green-50 text-green-600 rounded text-[10px] font-semibold hover:bg-green-100 transition-colors flex items-center justify-center gap-1">
+                          <button onClick={(e) => { e.stopPropagation(); onAction('workflow', { message: `Update ${item.name}'s status to selected` }); }} className="flex-1 py-1.5 bg-green-50 text-green-600 rounded text-[10px] font-semibold hover:bg-green-100 transition-colors flex items-center justify-center gap-1">
                             <CheckCircle2 className="w-3 h-3" /> Select
                           </button>
                         )}
                         {col.id.toLowerCase() === 'selected' && (
-                          <button onClick={(e) => { e.stopPropagation(); onAction('convert_to_employee', { id: item.id }); }} className="flex-1 py-1.5 bg-purple-50 text-purple-600 rounded text-[10px] font-semibold hover:bg-purple-100 transition-colors flex items-center justify-center gap-1">
+                          <button onClick={(e) => { e.stopPropagation(); onAction('workflow', { message: `Generate an offer letter and convert ${item.name} to employee` }); }} className="flex-1 py-1.5 bg-purple-50 text-purple-600 rounded text-[10px] font-semibold hover:bg-purple-100 transition-colors flex items-center justify-center gap-1">
                             <Clock className="w-3 h-3" /> Hire
                           </button>
                         )}
