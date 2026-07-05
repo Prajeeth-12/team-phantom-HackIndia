@@ -56,8 +56,9 @@ async def execute_postgres(action: str, payload: Dict[str, Any]) -> Dict[str, An
             # Dynamically filter based on arbitrary user input (e.g. role, status, experience)
             for key, val in payload.items():
                 if key not in ["skip", "limit", "name", "id"] and val:
-                    val_lower = str(val).lower()
-                    result = [row for row in result if val_lower in str(row.get(key, "")).lower()]
+                    if result and key in result[0]:
+                        val_lower = str(val).lower()
+                        result = [row for row in result if val_lower in str(row.get(key, "")).lower()]
 
             return {"status": "success", "data": result}
 
@@ -84,8 +85,9 @@ async def execute_postgres(action: str, payload: Dict[str, Any]) -> Dict[str, An
             # Dynamically filter based on arbitrary user input (e.g. department, position)
             for key, val in payload.items():
                 if key not in ["skip", "limit", "name", "id"] and val:
-                    val_lower = str(val).lower()
-                    data = [row for row in data if val_lower in str(row.get(key, "")).lower()]
+                    if data and key in data[0]:
+                        val_lower = str(val).lower()
+                        data = [row for row in data if val_lower in str(row.get(key, "")).lower()]
 
             return {"status": "success", "data": data}
 
