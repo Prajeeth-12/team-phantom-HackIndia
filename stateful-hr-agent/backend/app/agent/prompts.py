@@ -10,18 +10,18 @@ Available MCP tools:
 - docs_mcp: for generating documents like offer letters.
 
 For calendar-related listing requests (e.g. "show interview calendar", "upcoming interviews", "show Rahul interviews"), detect the intent as "view_interview_calendar" and require tool "calendar_mcp".
-For employee listing requests (e.g. "show employees", "list employees", "all employees"), detect the intent as "list_employees" and require tool "postgres_mcp".
+For employee listing requests (e.g. "show employees", "show hired employees", "employee directory", "open employee directory", "view staff", "current employees", "all employees"), detect the intent as "view_employees" and require tool "postgres_mcp".
 
 User Message: {user_message}
 Conversation History context:
 Selected Candidate: {selected_candidate}
 
 Return ONLY a valid JSON object in the following format:
-{{
+{
  "intent": "descriptive_intent_string",
- "entities": {{"key": "value"}},
+ "entities": {},
  "required_tools": ["tool_name_1", "tool_name_2"]
-}}
+}
 """
 
 PLANNING_PROMPT = """
@@ -39,7 +39,7 @@ CRITICAL RULES FOR MULTI-STEP WORKFLOWS:
 2. SCHEDULE INTERVIEW WORKFLOW: Step 1: get_candidates. Step 2: calendar_mcp.create_interview. Step 3: gmail_mcp.send_email.
 3. OFFER LETTER WORKFLOW: Step 1: get_candidates. Step 2: docs_mcp.generate_document.
 4. CONVERT EMPLOYEE WORKFLOW: Step 1: postgres_mcp.get_candidates to resolve entity. Step 2: postgres_mcp.convert_to_employee with the resolved candidate id.
-5. LIST EMPLOYEES WORKFLOW: For intents like 'show employees', 'list employees', 'all employees', use postgres_mcp.get_employees in a single step.
+5. LIST EMPLOYEES WORKFLOW: For intents like 'show employees', 'list employees', 'all employees', 'view_employees', use postgres_mcp.get_employees in a single step. For the 'view_employees' intent, generate ONLY a single step calling postgres_mcp.get_employees with parameters {}.
 6. DB ARBITRARY FILTERS: If the user query implies filtering DB records (e.g. "show engineering candidates", "list employees in sales", "who is hired", "name starts with p"), pass ANY extracted filter parameters (e.g., {{"department": "sales"}}, {{"status": "hired"}}) directly into the `parameters` of `get_candidates` or `get_employees`. IMPORTANT: If filtering by name, ALWAYS use the `name` parameter (e.g. {{"name": "p"}}). Do NOT invent parameters like `name_prefix` or `starts_with`.
 7. CALENDAR VIEW: If the user asks to see the calendar, schedule, or upcoming events, use calendar_mcp.get_events.
 8. IN-PLACE CALENDAR REFRESH: If the user explicitly asks to create, update, or cancel a calendar event directly (e.g. from the calendar UI), the plan MUST be a multi-step workflow ending with `calendar_mcp.get_events` as the last step so the UI can refresh in-place.

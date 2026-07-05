@@ -42,7 +42,14 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
 }) => {
   const rowData = useMemo(() => data ?? rows ?? [], [data, rows]);
   const headers = useMemo(() => {
-    if (columns && columns.length > 0) return columns;
+    if (columns && columns.length > 0) {
+      return columns.map((col: any) => {
+        if (typeof col === 'string') {
+          return { key: col, label: col };
+        }
+        return col;
+      });
+    }
     if (rowData.length === 0) return [];
     return Object.keys(rowData[0]).map((key) => ({ key, label: key }));
   }, [columns, rowData]);

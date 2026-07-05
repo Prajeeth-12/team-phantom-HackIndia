@@ -1,4 +1,4 @@
-﻿import json
+import json
 import os
 import re
 from langchain_core.messages import AIMessage
@@ -156,7 +156,7 @@ async def planning_node(state: AgentState) -> AgentState:
         plan = json.loads(raw_json)
         if not isinstance(plan, list):
             plan = []
-        if "employee" in intent.lower() and any(verb in intent.lower() for verb in ["list", "show", "get", "view", "all"]):
+        if intent == "view_employees" or ("employee" in intent.lower() and any(verb in intent.lower() for verb in ["list", "show", "get", "view", "all"])):
             plan = [{"step": 1, "tool": "postgres_mcp", "action": "get_employees", "parameters": {}}]
         plan = enforce_plan_guardrails(intent, entities, plan)
         print(f"\n[3] PLAN\n{json.dumps(plan, indent=1)}")

@@ -2,50 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-
-/* ═══════════════════════════════════════════
-   PREMIUM LIGHT THEME
-   ═══════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 :root {
-  --bg-base: #ffffff;
-  --bg-surface: #fafafa;
-  --bg-elevated: #f5f5f5;
-  
-  --border-subtle: #f0f0f0;
-  --border-default: #e5e5e5;
-  --border-strong: #d4d4d4;
-
-  --text-primary: #000000;
-  --text-secondary: #404040;
-  --text-muted: #737373;
-
-  --status-ok: #16a34a;
-  --status-warn: #d97706;
-  --status-error: #dc2626;
-  --status-accent: #2563eb;
+  --bg: #ffffff;
+  --text: #000000;
+  --border: #e5e5e5;
+  --muted: #737373;
+  --accent: #16a34a;
+  --blue: #2563eb;
+  --danger: #dc2626;
 }
 
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: var(--text); }
 
-html, body {
-  height: 100%;
-  overflow: hidden;
-  background: var(--bg-base);
-  color: var(--text-primary);
-  font-family: 'Inter', sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
+::selection { background: #e0f2fe; }
 
-::-webkit-scrollbar { width: 4px; height: 4px; }
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+::-webkit-scrollbar-thumb { background: #d4d4d4; border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: #a3a3a3; }
+
+/* Focus */
+*:focus-visible { outline: 2px solid #93c5fd; outline-offset: 2px; border-radius: 4px; }
+
+/* ── Animations ── */
 
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(4px); }
@@ -62,10 +45,24 @@ html, body {
   50% { box-shadow: 0 0 6px 2px rgba(22, 163, 74, 0.15); }
 }
 
+@keyframes thinking-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+@keyframes step-appear {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .animate-fade-in { animation: fade-in 0.2s ease-out forwards; }
 .animate-slide-in { animation: slide-in 0.2s ease-out forwards; }
 .animate-glow-pulse { animation: glow-pulse 2s ease-in-out infinite; }
+.thinking-pulse { animation: thinking-pulse 1.2s ease-in-out infinite; }
+.animate-step-appear { animation: step-appear 0.3s ease-out forwards; }
 .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+/* ── Dot flash for typing indicator ── */
 
 @keyframes dot-flash {
   0% { opacity: .2; }
@@ -87,3 +84,34 @@ html, body {
   animation-delay: .4s;
 }
 
+/* ── Status badges ── */
+
+.badge-applied {
+  background: #fefce8;
+  color: #a16207;
+  border: 1px solid #fde68a;
+}
+
+.badge-interviewing {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.badge-hired {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.badge-rejected {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.badge-default {
+  background: #f5f5f5;
+  color: #404040;
+  border: 1px solid #e5e5e5;
+}
