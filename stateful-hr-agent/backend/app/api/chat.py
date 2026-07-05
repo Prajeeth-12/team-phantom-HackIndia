@@ -1,4 +1,6 @@
 import traceback
+import json
+import datetime
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage
@@ -8,6 +10,7 @@ from app.agent.graph import hr_agent_app
 from app.database.database import AsyncSessionLocal
 from app.database.repository import candidate_repo
 from app.database import models
+from app.mcp.client import mcp_client
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
@@ -178,6 +181,21 @@ def _data_explorer_ui():
     }
 
 
+async def _build_calendar_ui():
+    res = await mcp_client.execute("calendar", "get_events", {})
+    events = []
+    if isinstance(res, dict):
+        events = res.get("data") or res.get("events") or []
+    if not isinstance(events, list):
+        events = []
+
+    return {
+        "type": "calendar",
+        "title": "Interview Calendar",
+        "events": events,
+    }
+
+
 def _schedule_result_ui(message: str):
     return {
         "type": "dashboard_card",
@@ -200,6 +218,19 @@ def _offer_result_ui():
     }
 
 
+
+
+def _extract_json_payload_from_message(message: str):
+    if not message:
+        return {}
+    start = message.find("{")
+    if start == -1:
+        return {}
+    try:
+        return json.loads(message[start:])
+    except Exception:
+        return {}
+
 async def _fallback_chat(message: str):
     text = (message or "").lower()
 
@@ -215,10 +246,60 @@ async def _fallback_chat(message: str):
             "ui": await _build_employees_table_ui(),
         }
 
-    if "schedule" in text and "interview" in text:
+    if "create a new calendar event with data:" in text or "create_event" in text:
+        payload = _extract_json_payload_from_message(message)
+        if not isinstance(payload, dict):
+            payload = {}
+        payload.setdefault("title", "HR Interview")
+        payload.setdefault(
+            "start_time",
+            (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+        )
+        res = await mcp_client.execute("calendar", "create_event", payload)
+        if res.get("status") == "success":
+            return {
+                "response": "Interview event created in calendar.",
+                "ui": await _build_calendar_ui(),
+            }
         return {
-            "response": "Interview scheduled. Calendar and email actions are complete.",
-            "ui": _schedule_result_ui(message),
+            "response": f"Failed to create calendar event: {res.get('message', 'unknown error')}",
+            "ui": {
+                "type": "dashboard_card",
+                "title": "Calendar Error",
+                "status": "error",
+                "message": res.get("message", "Could not create event"),
+            },
+        }
+
+    if (
+        ("calendar" in text and ("show" in text or "list" in text or "view" in text or "upcoming" in text))
+        or ("interview" in text and "calendar" in text)
+        or ("show interview" in text)
+    ):
+        return {
+            "response": "Showing interview calendar.",
+            "ui": await _build_calendar_ui(),
+        }
+
+    if "schedule" in text and "interview" in text:
+        payload = {
+            "title": "HR Interview",
+            "start_time": (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+        }
+        res = await mcp_client.execute("calendar", "create_event", payload)
+        if res.get("status") == "success":
+            return {
+                "response": "Interview scheduled and added to calendar.",
+                "ui": await _build_calendar_ui(),
+            }
+        return {
+            "response": "Interview scheduling failed in calendar.",
+            "ui": {
+                "type": "dashboard_card",
+                "title": "Interview Scheduling Error",
+                "status": "error",
+                "message": res.get("message", "Could not schedule interview"),
+            },
         }
 
     if "offer" in text and ("create" in text or "generate" in text):

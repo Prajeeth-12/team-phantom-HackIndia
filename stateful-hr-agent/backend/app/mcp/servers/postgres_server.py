@@ -36,6 +36,7 @@ async def execute_postgres(action: str, payload: Dict[str, Any]) -> Dict[str, An
             skip = payload.get("skip", 0)
             limit = payload.get("limit", 200)
             name_filter = (payload.get("name") or "").strip().lower()
+            starts_with = (payload.get("starts_with") or payload.get("name_starts_with") or "").strip().lower()
 
             candidates = await candidate_repo.get_candidates(db, skip, limit)
             result = [
@@ -50,8 +51,12 @@ async def execute_postgres(action: str, payload: Dict[str, Any]) -> Dict[str, An
                 }
                 for c in candidates
             ]
-            if name_filter:
+
+            if starts_with:
+                result = [row for row in result if str(row.get("name", "")).lower().startswith(starts_with)]
+            elif name_filter:
                 result = [row for row in result if name_filter in str(row.get("name", "")).lower()]
+
             return {"status": "success", "data": result}
 
         if action == "get_employees":
