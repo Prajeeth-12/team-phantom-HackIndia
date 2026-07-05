@@ -36,9 +36,10 @@ ACTION_MAP = {
     "modify_candidate": "update_candidate",
     "database_update": "update_candidate",
     "edit_candidate": "update_candidate",
-    "get_records": "get_candidates",
     "list_candidates": "get_candidates",
     "view_candidates": "get_candidates",
+    "list_employees": "get_employees",
+    "view_employees": "get_employees",
     "remove_candidate": "delete_candidate",
     "schedule_interview": "create_event", # will map to create_interview
     "book_meeting": "create_event",
@@ -103,6 +104,8 @@ async def planning_node(state: AgentState) -> AgentState:
         raw_json = clean_json_response(response.content)
         plan = json.loads(raw_json)
         if not isinstance(plan, list): plan = []
+        if "employee" in intent.lower() and any(verb in intent.lower() for verb in ["list", "show", "get", "view", "all"]):
+            plan = [{"step": 1, "tool": "postgres_mcp", "action": "get_employees", "parameters": {}}]
         print(f"\n[3] PLAN\n{json.dumps(plan, indent=1)}")
         return {"plan": plan}
     except Exception as e:
@@ -140,6 +143,11 @@ async def mcp_execution(state: AgentState) -> AgentState:
         action = ACTION_MAP.get(raw_action, raw_action)
         
         # fix invalid actions mapped by GPT
+        if action in ["get_records", "get_candidates"] and "employee" in intent.lower():
+            action = "get_employees"
+        elif action == "get_records":
+            action = "get_candidates"
+                
         if server == "calendar" and action in ["create_interview", "schedule_interview"]:
             action = "create_event"
         if server == "postgres" and action == "convert_to_employee":
@@ -199,14 +207,19 @@ async def mcp_execution(state: AgentState) -> AgentState:
         try:
             result = await mcp_client.execute(server, action, payload)
             
-            if action == "get_candidates" and result.get("status") == "success":
+            if action in ["get_candidates", "get_employees"] and result.get("status") == "success":
                 data = result.get("data", [])
                 if data and isinstance(data, list):
                     visible_context = data
                     if len(data) == 1:
-                        context["candidate_id"] = data[0].get("id")
-                        context["candidate_email"] = data[0].get("email")
-                        context["candidate_name"] = data[0].get("name")
+                        if action == "get_candidates":
+                            context["candidate_id"] = data[0].get("id")
+                            context["candidate_email"] = data[0].get("email")
+                            context["candidate_name"] = data[0].get("name")
+                        else:
+                            context["employee_id"] = data[0].get("id")
+                            context["employee_email"] = data[0].get("email")
+                            context["employee_name"] = data[0].get("name")
                         trace_log += f"🔍 Database MCP\nFound {data[0].get('name')}\n\n"
                         
             if server == "calendar" and result.get("status") == "success":

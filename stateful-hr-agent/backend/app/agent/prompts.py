@@ -41,7 +41,8 @@ CRITICAL RULES FOR MULTI-STEP WORKFLOWS:
 4. CONVERT EMPLOYEE WORKFLOW: Step 1: postgres_mcp.get_candidates to resolve entity. Step 2: postgres_mcp.convert_to_employee with the resolved candidate id.
 5. LIST EMPLOYEES WORKFLOW: For intents like 'show employees', 'list employees', 'all employees', use postgres_mcp.get_employees in a single step.
 6. CALENDAR VIEW: If the user asks to see the calendar, schedule, or upcoming events, use calendar_mcp.get_events.
-7. NO EMPTY FORMS: AG-UI forms are fallbacks. If you have enough data to execute the MCP directly, DO IT. Do not return `render_form` unless you are absolutely missing data that cannot be inferred or generated.
+7. IN-PLACE CALENDAR REFRESH: If the user explicitly asks to create, update, or cancel a calendar event directly (e.g. from the calendar UI), the plan MUST be a multi-step workflow ending with `calendar_mcp.get_events` as the last step so the UI can refresh in-place.
+8. NO EMPTY FORMS: AG-UI forms are fallbacks. If you have enough data to execute the MCP directly, DO IT. Do not return `render_form` unless you are absolutely missing data that cannot be inferred or generated.
 
 Return ONLY a JSON array of steps. Every step MUST have keys: step, tool, action, parameters.
 

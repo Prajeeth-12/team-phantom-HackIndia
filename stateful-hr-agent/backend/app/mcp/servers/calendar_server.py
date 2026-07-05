@@ -23,32 +23,65 @@ def get_credentials():
     return creds
 
 
+MOCK_EVENTS = [
+    {
+        "id": "mock-event-1",
+        "title": "Interview: John Doe",
+        "start": datetime.datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
+        "end": (datetime.datetime.utcnow() + datetime.timedelta(hours=1)).replace(microsecond=0).isoformat() + "Z",
+        "description": "Mock interview",
+        "meeting_link": "https://meet.google.com/mock"
+    }
+]
+
 async def execute_calendar(action: str, payload: Dict[str, Any]) -> Dict[str, Any]:
     """
     Real Google Calendar MCP Server using OAuth.
     """
     try:
+        global MOCK_EVENTS
         creds = get_credentials()
         if not creds:
             # Mock behavior if credentials don't exist
-            if action == "get_events":
+            if action == "get_events" or action == "list_events":
                 return {
                     "status": "success",
-                    "message": "Retrieved 1 mock events",
-                    "data": [
-                        {
-                            "id": "mock-event-1",
-                            "title": "Interview: John Doe",
-                            "start": datetime.datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
-                            "description": "Mock interview",
-                            "meeting_link": "https://meet.google.com/mock"
-                        }
-                    ]
+                    "message": f"Retrieved {len(MOCK_EVENTS)} mock events",
+                    "data": MOCK_EVENTS,
+                    "events": MOCK_EVENTS # For list_events compatibility
                 }
             elif action == "create_event":
-                return {"status": "success", "message": "Mock event created", "data": {"event_id": "mock-event-2"}}
-            elif action in ["update_event", "cancel_event"]:
-                return {"status": "success", "message": "Mock event updated/cancelled"}
+                new_event = {
+                    "id": f"mock-event-{len(MOCK_EVENTS) + 1}",
+                    "title": payload.get("title", "New Mock Event"),
+                    "start": payload.get("start_time", datetime.datetime.utcnow().replace(microsecond=0).isoformat() + "Z"),
+                    "description": payload.get("description", ""),
+                    "meeting_link": "https://meet.google.com/mock-new"
+                }
+                # Approximate end time for UI
+                try:
+                    start_dt = datetime.datetime.fromisoformat(new_event["start"].replace("Z", "+00:00"))
+                    new_event["end"] = (start_dt + datetime.timedelta(hours=1)).isoformat().replace("+00:00", "Z")
+                except:
+                    pass
+                MOCK_EVENTS.append(new_event)
+                return {"status": "success", "message": "Mock event created", "data": {"event_id": new_event["id"]}}
+            elif action == "update_event":
+                event_id = payload.get("event_id")
+                for evt in MOCK_EVENTS:
+                    if evt["id"] == event_id:
+                        if payload.get("title"): evt["title"] = payload["title"]
+                        if payload.get("start_time"): 
+                            evt["start"] = payload["start_time"]
+                            try:
+                                start_dt = datetime.datetime.fromisoformat(evt["start"].replace("Z", "+00:00"))
+                                evt["end"] = (start_dt + datetime.timedelta(hours=1)).isoformat().replace("+00:00", "Z")
+                            except: pass
+                return {"status": "success", "message": "Mock event updated"}
+            elif action == "cancel_event":
+                event_id = payload.get("event_id")
+                MOCK_EVENTS = [evt for evt in MOCK_EVENTS if evt["id"] != event_id]
+                return {"status": "success", "message": "Mock event cancelled"}
             
         service = build("calendar", "v3", credentials=creds)
 
