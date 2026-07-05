@@ -36,6 +36,7 @@ async def execute_postgres(action: str, payload: Dict[str, Any]) -> Dict[str, An
             skip = payload.get("skip", 0)
             limit = payload.get("limit", 200)
             name_filter = (payload.get("name") or "").strip().lower()
+            starts_with = (payload.get("starts_with") or payload.get("name_starts_with") or "").strip().lower()
 
             candidates = await candidate_repo.get_candidates(db, skip, limit)
             result = [
@@ -50,15 +51,11 @@ async def execute_postgres(action: str, payload: Dict[str, Any]) -> Dict[str, An
                 }
                 for c in candidates
             ]
-            if name_filter:
+
+            if starts_with:
+                result = [row for row in result if str(row.get("name", "")).lower().startswith(starts_with)]
+            elif name_filter:
                 result = [row for row in result if name_filter in str(row.get("name", "")).lower()]
-            
-            # Dynamically filter based on arbitrary user input (e.g. role, status, experience)
-            for key, val in payload.items():
-                if key not in ["skip", "limit", "name", "id"] and val:
-                    if result and key in result[0]:
-                        val_lower = str(val).lower()
-                        result = [row for row in result if val_lower in str(row.get(key, "")).lower()]
 
             return {"status": "success", "data": result}
 

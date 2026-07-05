@@ -66,3 +66,24 @@ html, body {
 .animate-slide-in { animation: slide-in 0.2s ease-out forwards; }
 .animate-glow-pulse { animation: glow-pulse 2s ease-in-out infinite; }
 .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+@keyframes dot-flash {
+  0% { opacity: .2; }
+  20% { opacity: 1; }
+  100% { opacity: .2; }
+}
+
+.dot-flash-1 {
+  animation: dot-flash 1.4s infinite both;
+}
+
+.dot-flash-2 {
+  animation: dot-flash 1.4s infinite both;
+  animation-delay: .2s;
+}
+
+.dot-flash-3 {
+  animation: dot-flash 1.4s infinite both;
+  animation-delay: .4s;
+}
+

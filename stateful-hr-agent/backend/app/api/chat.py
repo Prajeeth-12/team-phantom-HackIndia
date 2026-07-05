@@ -1,13 +1,16 @@
 import traceback
+import json
+import datetime
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, AIMessage
 from sqlalchemy import select
 
 from app.agent.graph import hr_agent_app
 from app.database.database import AsyncSessionLocal
 from app.database.repository import candidate_repo
 from app.database import models
+from app.mcp.client import mcp_client
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
@@ -17,6 +20,95 @@ class ChatRequest(BaseModel):
     thread_id: str = "default_thread"
 
 
+_STATE_KEYS = [
+    "selected_candidate",
+    "current_workflow",
+    "last_ui",
+    "visible_context",
+]
+
+
+def _message_to_dict(message):
+    if isinstance(message, HumanMessage):
+        return {"type": "human", "content": message.content}
+    if isinstance(message, AIMessage):
+        return {"type": "ai", "content": message.content}
+    return {"type": "unknown", "content": str(getattr(message, "content", ""))}
+
+
+def _dict_to_message(item):
+    if not isinstance(item, dict):
+        return None
+    content = item.get("content", "")
+    msg_type = item.get("type")
+    if msg_type == "human":
+        return HumanMessage(content=content)
+    if msg_type == "ai":
+        return AIMessage(content=content)
+    return None
+
+
+async def _load_conversation_history(db, thread_id: str):
+    stmt = select(models.ConversationMemory).where(models.ConversationMemory.thread_id == thread_id)
+    result = await db.execute(stmt)
+    row = result.scalars().first()
+    if not row or not row.messages:
+        return []
+    try:
+        raw = json.loads(row.messages)
+    except Exception:
+        return []
+    if not isinstance(raw, list):
+        return []
+    messages = []
+    for item in raw:
+        msg = _dict_to_message(item)
+        if msg is not None:
+            messages.append(msg)
+    return messages
+
+
+async def _save_conversation_history(db, thread_id: str, messages):
+    compact = [_message_to_dict(m) for m in messages][-20:]
+    payload = json.dumps(compact, ensure_ascii=True)
+
+    stmt = select(models.ConversationMemory).where(models.ConversationMemory.thread_id == thread_id)
+    result = await db.execute(stmt)
+    row = result.scalars().first()
+    if row:
+        row.messages = payload
+    else:
+        row = models.ConversationMemory(thread_id=thread_id, messages=payload)
+        db.add(row)
+    await db.commit()
+
+
+async def _load_agent_state(db, thread_id: str):
+    stmt = select(models.AgentState).where(models.AgentState.thread_id == thread_id)
+    result = await db.execute(stmt)
+    row = result.scalars().first()
+    if not row or not row.current_state:
+        return {}
+    try:
+        data = json.loads(row.current_state)
+    except Exception:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+async def _save_agent_state(db, thread_id: str, state: dict):
+    persisted = {k: state.get(k) for k in _STATE_KEYS if state.get(k) is not None}
+    payload = json.dumps(persisted, ensure_ascii=True)
+
+    stmt = select(models.AgentState).where(models.AgentState.thread_id == thread_id)
+    result = await db.execute(stmt)
+    row = result.scalars().first()
+    if row:
+        row.current_state = payload
+    else:
+        row = models.AgentState(thread_id=thread_id, current_state=payload)
+        db.add(row)
+    await db.commit()
 async def _build_candidates_table_ui():
     async with AsyncSessionLocal() as db:
         candidates = await candidate_repo.get_candidates(db, skip=0, limit=200)
@@ -178,6 +270,21 @@ def _data_explorer_ui():
     }
 
 
+async def _build_calendar_ui():
+    res = await mcp_client.execute("calendar", "get_events", {})
+    events = []
+    if isinstance(res, dict):
+        events = res.get("data") or res.get("events") or []
+    if not isinstance(events, list):
+        events = []
+
+    return {
+        "type": "calendar",
+        "title": "Interview Calendar",
+        "events": events,
+    }
+
+
 def _schedule_result_ui(message: str):
     return {
         "type": "dashboard_card",
@@ -200,6 +307,19 @@ def _offer_result_ui():
     }
 
 
+
+
+def _extract_json_payload_from_message(message: str):
+    if not message:
+        return {}
+    start = message.find("{")
+    if start == -1:
+        return {}
+    try:
+        return json.loads(message[start:])
+    except Exception:
+        return {}
+
 async def _fallback_chat(message: str):
     text = (message or "").lower()
 
@@ -215,10 +335,60 @@ async def _fallback_chat(message: str):
             "ui": await _build_employees_table_ui(),
         }
 
-    if "schedule" in text and "interview" in text:
+    if "create a new calendar event with data:" in text or "create_event" in text:
+        payload = _extract_json_payload_from_message(message)
+        if not isinstance(payload, dict):
+            payload = {}
+        payload.setdefault("title", "HR Interview")
+        payload.setdefault(
+            "start_time",
+            (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+        )
+        res = await mcp_client.execute("calendar", "create_event", payload)
+        if res.get("status") == "success":
+            return {
+                "response": "Interview event created in calendar.",
+                "ui": await _build_calendar_ui(),
+            }
         return {
-            "response": "Interview scheduled. Calendar and email actions are complete.",
-            "ui": _schedule_result_ui(message),
+            "response": f"Failed to create calendar event: {res.get('message', 'unknown error')}",
+            "ui": {
+                "type": "dashboard_card",
+                "title": "Calendar Error",
+                "status": "error",
+                "message": res.get("message", "Could not create event"),
+            },
+        }
+
+    if (
+        ("calendar" in text and ("show" in text or "list" in text or "view" in text or "upcoming" in text))
+        or ("interview" in text and "calendar" in text)
+        or ("show interview" in text)
+    ):
+        return {
+            "response": "Showing interview calendar.",
+            "ui": await _build_calendar_ui(),
+        }
+
+    if "schedule" in text and "interview" in text:
+        payload = {
+            "title": "HR Interview",
+            "start_time": (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+        }
+        res = await mcp_client.execute("calendar", "create_event", payload)
+        if res.get("status") == "success":
+            return {
+                "response": "Interview scheduled and added to calendar.",
+                "ui": await _build_calendar_ui(),
+            }
+        return {
+            "response": "Interview scheduling failed in calendar.",
+            "ui": {
+                "type": "dashboard_card",
+                "title": "Interview Scheduling Error",
+                "status": "error",
+                "message": res.get("message", "Could not schedule interview"),
+            },
         }
 
     if "offer" in text and ("create" in text or "generate" in text):
@@ -243,7 +413,15 @@ async def _fallback_chat(message: str):
 async def chat_endpoint(request: ChatRequest):
     try:
         config = {"configurable": {"thread_id": request.thread_id}}
-        initial_state = {"messages": [HumanMessage(content=request.message)]}
+
+        async with AsyncSessionLocal() as db:
+            persisted_state = await _load_agent_state(db, request.thread_id)
+            conversation_history = await _load_conversation_history(db, request.thread_id)
+
+        # Rehydrate persisted conversation and state before processing the new turn.
+        initial_messages = [*conversation_history, HumanMessage(content=request.message)]
+        initial_state = {"messages": initial_messages, **persisted_state}
+
         result = await hr_agent_app.ainvoke(initial_state, config)
 
         messages = result.get("messages", [])
@@ -259,6 +437,11 @@ async def chat_endpoint(request: ChatRequest):
             "mcp_results": result.get("mcp_results", []),
             "agent_trace_log": result.get("agent_trace_log", "")
         }
+
+        updated_history = [*conversation_history, HumanMessage(content=request.message), AIMessage(content=response_text)]
+        async with AsyncSessionLocal() as db:
+            await _save_agent_state(db, request.thread_id, result)
+            await _save_conversation_history(db, request.thread_id, updated_history)
 
         return {
             "response": response_text,
@@ -281,3 +464,4 @@ async def chat_endpoint(request: ChatRequest):
             return fallback_res
 
         raise HTTPException(status_code=500, detail=detail)
+

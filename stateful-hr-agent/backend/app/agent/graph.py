@@ -32,8 +32,5 @@ workflow.add_edge("mcp_execution", "ag_ui_generation")
 workflow.add_edge("ag_ui_generation", "response")
 workflow.add_edge("response", END)
 
-from langgraph.checkpoint.memory import MemorySaver
-
-# Compile graph with memory checkpointer for persistence
-memory = MemorySaver()
-hr_agent_app = workflow.compile(checkpointer=memory)
+# Compile graph; durable state is handled at API layer via DB persistence.
+hr_agent_app = workflow.compile()

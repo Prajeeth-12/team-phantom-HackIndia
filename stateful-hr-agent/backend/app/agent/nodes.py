@@ -1,5 +1,6 @@
-import json
+﻿import json
 import os
+import re
 from langchain_core.messages import AIMessage
 from app.agent.state import AgentState
 from app.agent.prompts import (
@@ -31,6 +32,22 @@ def clean_json_response(content: str) -> str:
     if cleaned.endswith("```"): cleaned = cleaned[:-3]
     return cleaned.strip()
 
+def extract_name_prefix_query(user_message: str):
+    """Extract exact one-letter prefix from requests like: 'name starts with p'."""
+    if not user_message:
+        return None
+
+    msg = user_message.lower()
+    patterns = [
+        r'\b(?:name|names|candidate|candidates)?\s*(?:that\s+)?starts?\s+with\s+[\"\']?([a-z])[\"\']?\b',
+        r'\bstarting\s+with\s+[\"\']?([a-z])[\"\']?\b',
+    ]
+    for pat in patterns:
+        m = re.search(pat, msg)
+        if m:
+            return m.group(1)
+    return None
+
 ACTION_MAP = {
     "update_record": "update_candidate",
     "modify_candidate": "update_candidate",
@@ -43,6 +60,11 @@ ACTION_MAP = {
     "remove_candidate": "delete_candidate",
     "schedule_interview": "create_event", # will map to create_interview
     "book_meeting": "create_event",
+    "list_interviews": "get_events",
+    "view_calendar": "get_events",
+    "show_calendar": "get_events",
+    "fetch_events": "get_events",
+    "generate_offer": "generate_document",
 }
 
 async def input_node(state: AgentState) -> AgentState:
@@ -88,6 +110,35 @@ async def memory_retrieval(state: AgentState) -> AgentState:
             
     return state
 
+def build_calendar_view_plan(entities: dict) -> list:
+    params = {}
+    candidate_name = (
+        entities.get("candidate_name")
+        or entities.get("candidate")
+        or entities.get("name")
+    )
+    if candidate_name:
+        params["candidate_name"] = candidate_name
+
+    if entities.get("start_date"):
+        params["start_date"] = entities.get("start_date")
+    if entities.get("end_date"):
+        params["end_date"] = entities.get("end_date")
+
+    return [{
+        "step": 1,
+        "tool": "calendar_mcp",
+        "action": "get_events",
+        "parameters": params,
+    }]
+
+
+def enforce_plan_guardrails(intent: str, entities: dict, plan: list) -> list:
+    # Hard guardrail: calendar viewing intents must never mutate events.
+    if intent == "view_interview_calendar":
+        return build_calendar_view_plan(entities)
+    return plan
+
 async def planning_node(state: AgentState) -> AgentState:
     intent = state.get("intent", "")
     entities = state.get("entities", {})
@@ -103,14 +154,17 @@ async def planning_node(state: AgentState) -> AgentState:
     try:
         raw_json = clean_json_response(response.content)
         plan = json.loads(raw_json)
-        if not isinstance(plan, list): plan = []
+        if not isinstance(plan, list):
+            plan = []
         if "employee" in intent.lower() and any(verb in intent.lower() for verb in ["list", "show", "get", "view", "all"]):
             plan = [{"step": 1, "tool": "postgres_mcp", "action": "get_employees", "parameters": {}}]
+        plan = enforce_plan_guardrails(intent, entities, plan)
         print(f"\n[3] PLAN\n{json.dumps(plan, indent=1)}")
         return {"plan": plan}
     except Exception as e:
         print(f"\n[3] PLAN\nFAILED: {e}")
-        return {"plan": []}
+        fallback_plan = enforce_plan_guardrails(intent, entities, [])
+        return {"plan": fallback_plan}
 
 async def mcp_execution(state: AgentState) -> AgentState:
     plan = state.get("plan", [])
@@ -131,7 +185,7 @@ async def mcp_execution(state: AgentState) -> AgentState:
     
     results = []
     context = {}
-    trace_log = f"🧠 GPT-5.1\nIntent: {state.get('intent', 'unknown')}\n\n"
+    trace_log = f"ðŸ§  GPT-5.1\nIntent: {state.get('intent', 'unknown')}\n\n"
     
     for step in plan:
         tool_raw = step.get("tool", "")
@@ -150,12 +204,23 @@ async def mcp_execution(state: AgentState) -> AgentState:
                 
         if server == "calendar" and action in ["create_interview", "schedule_interview"]:
             action = "create_event"
+        if server == "calendar" and action in ["list_interviews", "view_calendar", "show_calendar", "fetch_events", "view_interview_calendar"]:
+            action = "get_events"
         if server == "postgres" and action == "convert_to_employee":
             action = "update_candidate"
+            if not isinstance(step.get("parameters"), dict):
+                step["parameters"] = {}
             step["parameters"]["status"] = "employee"
-            
-        payload = step.get("parameters", {})
-        
+
+        raw_payload = step.get("parameters", {})
+        payload = raw_payload if isinstance(raw_payload, dict) else {}
+
+        # Deterministic guardrail for prompts like: "names starting with p"
+        if server == "postgres" and action == "get_candidates":
+            forced_prefix = extract_name_prefix_query(user_message)
+            if forced_prefix:
+                payload["starts_with"] = forced_prefix
+
         needs_entity = action in ["update_candidate", "delete_candidate", "convert_to_employee", "create_event", "send_email", "generate_document"]
         if needs_entity and "id" not in payload and "candidate_id" not in payload:
             name = payload.get("name") or payload.get("candidate_name") or selected_candidate
@@ -169,7 +234,7 @@ async def mcp_execution(state: AgentState) -> AgentState:
                         break
                 if found:
                     print(f"Found:\n{{\n id: {found.get('id')}\n name: {found.get('name')}\n email: {found.get('email')}\n}}")
-                    trace_log += f"🔍 Database MCP\nFound {found.get('name')}\n\n"
+                    trace_log += f"ðŸ” Database MCP\nFound {found.get('name')}\n\n"
                     context["candidate_id"] = found["id"]
                     context["candidate_email"] = found.get("email")
                     context["candidate_name"] = found.get("name")
@@ -220,21 +285,21 @@ async def mcp_execution(state: AgentState) -> AgentState:
                             context["employee_id"] = data[0].get("id")
                             context["employee_email"] = data[0].get("email")
                             context["employee_name"] = data[0].get("name")
-                        trace_log += f"🔍 Database MCP\nFound {data[0].get('name')}\n\n"
+                        trace_log += f"ðŸ” Database MCP\nFound {data[0].get('name')}\n\n"
                         
             if server == "calendar" and result.get("status") == "success":
                 if action == "get_events":
-                    trace_log += f"📅 Calendar MCP\nRetrieved events\n\n"
+                    trace_log += f"ðŸ“… Calendar MCP\nRetrieved events\n\n"
                 elif action == "cancel_event":
-                    trace_log += f"📅 Calendar MCP\nEvent cancelled\n\n"
+                    trace_log += f"ðŸ“… Calendar MCP\nEvent cancelled\n\n"
                 else:
-                    trace_log += f"📅 Calendar MCP\nEvent scheduled/updated\n\n"
+                    trace_log += f"ðŸ“… Calendar MCP\nEvent scheduled/updated\n\n"
             if server == "docs" and result.get("status") == "success":
-                trace_log += f"📄 Docs MCP\nOffer created\n\n"
+                trace_log += f"ðŸ“„ Docs MCP\nOffer created\n\n"
             if server == "gmail" and result.get("status") == "success":
-                trace_log += f"📧 Gmail MCP\nEmail sent\n\n"
+                trace_log += f"ðŸ“§ Gmail MCP\nEmail sent\n\n"
             if server == "postgres" and action in ["convert_to_employee", "update_candidate", "delete_candidate", "create_candidate"] and result.get("status") == "success":
-                trace_log += f"💾 Postgres MCP\nDatabase updated successfully\n\n"
+                trace_log += f"ðŸ’¾ Postgres MCP\nDatabase updated successfully\n\n"
                     
         except Exception as e:
             result = {"status": "error", "message": str(e)}
@@ -249,7 +314,7 @@ async def mcp_execution(state: AgentState) -> AgentState:
             "result": result
         })
         
-    trace_log += "✅ Complete"
+    trace_log += "âœ… Complete"
     print("\n===================================\n")
         
     return {
