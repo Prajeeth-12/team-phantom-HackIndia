@@ -69,6 +69,30 @@ async def execute_docs(action: str, payload: Dict[str, Any]) -> Dict[str, Any]:
             docs_service.documents().batchUpdate(documentId=document_id, body={"requests": requests}).execute()
             return {"status": "success", "message": "Document updated successfully", "data": {"document_id": document_id}}
 
+        if action == "get_dashboard_metrics":
+            # For hackathon purposes, search Drive for recent documents
+            results = drive_service.files().list(
+                q="mimeType='application/vnd.google-apps.document'",
+                orderBy="createdTime desc",
+                pageSize=100,
+                fields="files(id, name, createdTime, webViewLink)"
+            ).execute()
+            items = results.get('files', [])
+            
+            generated_offers_count = len([i for i in items if 'offer' in i.get('name', '').lower()])
+            latest_document = items[0].get('name') if items else "No documents found"
+            
+            return {
+                "status": "success",
+                "data": {
+                    "documents": {
+                        "generated_offers_count": generated_offers_count,
+                        "latest_document": latest_document,
+                        "total_documents": len(items)
+                    }
+                }
+            }
+
         return {"status": "error", "message": f"Unknown action: {action}"}
 
     except Exception as e:
